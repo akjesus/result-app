@@ -1,0 +1,152 @@
+// controllers/authController.js
+const Staff = require("../models/staffModel");
+const Student = require("../models/studentModel");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const dotenv = require("dotenv");
+dotenv.config({ path: "/.env", quiet: true });
+let blacklistedTokens = new Set(); // Store invalid tokens (only works for in-memory)
+
+const JWT_SECRET = process.env.JWT_SECRET; // Store in env file
+
+exports.login = async (req, res) => {
+  let user;
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      user = await Staff.findByUsername(username);
+      if (!user) {
+        user = await Student.findByUsername(username);
+        if (!user) {
+        return res.status(401).json({ error: "Invalid Username" });
+          }
+          if (!user.password) {
+          return res.status(500).json({ error: "User record is corrupted. No password found." });
+          }
+      // Verify password against hashed password
+          const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        const rawPassword = user.password === password? true : false;
+        if (!rawPassword) {
+        return res.status(401).json({ error: "Invalid Password" });
+        }}
+      }
+      // Generate JWT token
+      const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
+      res.status(200).json({ message: "Login successful", token });
+
+    } catch (err) {
+      console.error("Login error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+
+exports.studentLogin = async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+  
+      const student = await Student.findByUsername(username);
+  
+      if (!student) {
+        return res.status(401).json({ error: "Invalid Username" });
+      }
+  
+      // Ensure password from DB is not null
+      if (!student.password) {
+        return res.status(500).json({ error: "User record is corrupted. No password found." });
+      }
+      // Verify password against hashed password
+      const passwordMatch = await bcrypt.compare(password, student.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid Password" });
+      }
+  
+      // Generate JWT token
+      const token = jwt.sign({ id: user.id, role: "Student" }, JWT_SECRET, { expiresIn: "24h" });
+      res.status(200).json({ message: "Login successful", token });
+
+    } catch (err) {
+      console.error("Login error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  };
+
+exports.adminLogout = (req, res) => {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token) {
+          return res.status(400).json({ error: "No token provided" });
+      }
+      blacklistedTokens.add(token);
+      res.cookie('jwt', 'Logged Out!', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+  });
+      res.json({ message: "Logout successful" });
+  };
+  
+exports.verifyToken = (req, res, next) => {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token || blacklistedTokens.has(token)) {
+          return res.status(401).json({ error: "Unauthorized or logged out" });
+      }
+  
+      jwt.verify(token, JWT_SECRET, (err, user) => {
+          if (err) {
+              return res.status(403).json({ error: "Invalid token" });
+          }
+          req.user = user;
+          next();
+      });
+  };
+
+exports.refreshToken = (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ error: "Unauthorized, please login!" });
+    } 
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: "Invalid token" });
+        }
+        const newToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
+        res.status(200).json({ token: newToken });
+    });
+  };
+
+
+exports.getMe = async (req, res) => {
+  let user;
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ error: "Unauthorized" });
+    } 
+    const decoded = jwt.verify(token, JWT_SECRET)
+    console.log(decoded)
+    user = await Staff.findById(decoded.id) || await Student.findById(decoded.id);
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+   user.password = undefined; // Remove password from response
+   }
+   
+  catch(err) {
+    console.log(err)
+    return res.status(500).json({ error: err.message });
+    }
+    return res.status(200).json({ user })
+  };  
+
+
+exports.restrictTo =  (...roles) =>  (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      res.status(401).json({ message: "Unauthorised, contact Admin!"});
+    }
+    next();
+  };
