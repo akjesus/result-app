@@ -39,7 +39,7 @@ exports.getAllUsers = async (req, res) => {
     // Only use filter params for count query
     const [[{ total }]] = await Student.execute(countQuery, params);
 
-    return res.status(200).json({
+    return res.status(200).json({success: true, code: 500,
       users,
       pagination: {
         page,
@@ -50,7 +50,7 @@ exports.getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: error });
+    return res.status(500).json({ success: false, code: 500, message: error });
   }
 }
 
@@ -60,12 +60,12 @@ exports.getUserById = async (req, res) => {
     try {
         const user = await Student.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, code: 404, message: 'User not found' });
         }   
-        return res.status(200).json(user);
+        return res.status(200).json({success: true, code: 200, user});
     } catch (error) {
-        console.error('Error fetching user by ID:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        console.log('Error fetching user by ID:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };
 
@@ -77,21 +77,21 @@ exports.createUser = async (req, res) => {
       const { firstName, lastName, email, username, password, role, department, level } = req.body;
        
       if (!firstName || !lastName || !email || !username || !password || !role) {
-        return res.status(400).json({ error: "All fields are required!" });
+        return res.status(400).json({ success: false, code: 400, message: "All fields are required!" });
       }
 
       if (role === 'student') {
         if (!department || !level) {
-          return res.status(400).json({ error: "Department and level are required for students!" });
+          return res.status(400).json({ success: false, code: 400, message:  "Department and level are required for students!" });
         }
         const studentId = await Student.createStudent(firstName, lastName, email, username, password, department, level);
-        return res.status(201).json({ message: "Student created successfully", id: studentId });
+        return res.status(201).json({ success: true, code: 201, message:  "Student created successfully", id: studentId });
       }
 
       const staffId = await Staff.createStaff(firstName, lastName, email, username, password);
-      res.status(201).json({ message: "Staff created successfully", id: staffId});
+      res.status(201).json({ success: true, code: 201, message:  "Staff created successfully", id: staffId});
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ success: false, code: 500, message:  err.message });
     }
   };
 
@@ -100,12 +100,12 @@ exports.resetPassword = async (req, res) => {
     try {
       const { id} = req.params;
         if ( !id ) {
-            return res.status(400).json({ error: "ID required!" });
+            return res.status(400).json({ success: false, code: 400, message: "ID required!" });
         }
         // Implement password reset logic here
         const user = await Student.findById(id) || await Staff.findByUsername(id);
         if (!user) {
-            return res.status(404).json({ error: "User not found!" });
+            return res.status(404).json({ success: false, code: 404, message: "User not found!" });
         }
         const newPassword = await bcrypt.hash("password", 10);
         let table = user.role === 'student' ? 'students' : 'staff';
@@ -113,9 +113,9 @@ exports.resetPassword = async (req, res) => {
 
         await Model.execute(`UPDATE ${table} SET password = ? WHERE id = ?`, [newPassword, user.id]);
 
-        res.status(200).json({ message: "Password reset successful" });
+        res.status(200).json({ success: true, code: 200, message:  "Password reset successful" });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ success: false, code: 500, message:  err.message });
     }
 };
 
@@ -125,13 +125,13 @@ exports.deleteUser = async (req, res) => {
     try {   
         const user = await Student.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, code: 404, message:  'User not found' });
         }
         await Student.execute('DELETE FROM students WHERE id = ?', [userId]);
-        return res.status(200).json({ message: 'User deleted successfully' });
+        return res.status(200).json({ success: true, code: 200, message:  'User deleted successfully' });
     } catch (error) {
         console.log('Error deleting user:', error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ success: false, code: 500, message:  error });
     }
 };
 
@@ -143,7 +143,7 @@ exports.updateUser = async (req, res) => {
     try {
         const user = await Student.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, code: 404, message:'User not found' });
         }
         await Student.execute(`
             UPDATE ${table} 
@@ -155,10 +155,10 @@ exports.updateUser = async (req, res) => {
             level_id = ? 
             WHERE id = ?`, 
         [firstName, lastName, email, username, department, level, userId]);  
-        return res.status(200).json({ message: 'User updated successfully', user }); 
+        return res.status(200).json({ success: true, code: 200, message:'User updated successfully', user }); 
     } catch (error) {
         console.log('Error updating user:', error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ success: false, code: 500, message:error });
     }
 };
 
@@ -167,14 +167,14 @@ exports.blockUser = async (req, res) => {
     try {
         const user = await Student.findById(userId);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, code: 500, message: 'User not found' });
         }
         await Student.blockUnblockStudent(userId);
         const message = user.blocked ? 'User unblocked successfully' : 'User blocked successfully';
-        return res.status(200).json({ message: message });
+        return res.status(200).json({ success: true, code: 200,  message });
     } catch (error) {
         console.log('Error blocking user:', error);
-        return res.status(500).json({ message: error });
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };
 

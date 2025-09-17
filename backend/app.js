@@ -8,7 +8,8 @@ const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
 const notifier = require("node-notifier");
 const dotenv = require("dotenv");
-dotenv.config({ path: "/.env" });
+dotenv.config({ path: "/.env"});
+
 const path = require("path");
 
 
@@ -22,6 +23,8 @@ app.use(helmet());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(fileUpload());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
 
 // Test Route
 app.get("/", (req, res) => {
@@ -31,12 +34,14 @@ app.get("/", (req, res) => {
 // Import Routes
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-const courseRoutes = require("./routes/courseRoutes.js");
+const courseRoutes = require("./routes/courseRoutes");
+const resultRoutes = require("./routes/resultRoutes");
 
 //Use Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/results", resultRoutes);
 
 // Handle 404 errors for undefined routes
 app.use((req, res, next) => {
