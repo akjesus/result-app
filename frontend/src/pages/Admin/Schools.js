@@ -20,6 +20,7 @@ import {
   Alert,
   Pagination
 } from "@mui/material";
+
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 
@@ -45,7 +46,10 @@ export default function SchoolsPage() {
 
   const fetchSchools = () => {
     getSchools()
-      .then(res => setSchools(res.data))
+      .then(res => {
+        console.log(res.data.schools)
+        setSchools(res.data.schools)
+      })
       .catch(err => console.error(err));
   };
 

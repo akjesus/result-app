@@ -3,12 +3,13 @@ const Staff = require("../models/staffModel");
 const bcrypt = require("bcrypt");
 const csvParser = require('csv-parser');
 const stream = require('stream');
+const db = require("../config/database");
 
 //get all users from the sql database and paginate the results
 
 exports.getAllStudents = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || null;
   const department = parseInt(req.query.department) || null;
   const level = parseInt(req.query.level) || null;
   try {
@@ -16,7 +17,7 @@ exports.getAllStudents = async (req, res) => {
     let query = `SELECT  concat(first_name, ' ', last_name) AS fullName, 
     email, registration_number as matric, username,
     departments.name AS department, levels.name AS level,
-    faculties.name AS faculty 
+    faculties.name AS school 
     FROM students
     JOIN departments ON students.department_id = departments.id
     JOIN levels ON students.level_id = levels.id
@@ -42,7 +43,7 @@ exports.getAllStudents = async (req, res) => {
     }
 
     // Add pagination params at the end for the main query
-    query += ' LIMIT ? OFFSET ?';
+    if(limit) query += ' LIMIT ? OFFSET ?';
     const queryParams = [...params, limit, offset];
     const [students] = await Student.execute(query, queryParams);
     // Only use filter params for count query
@@ -266,7 +267,7 @@ exports.bulkUploadStudents = async (req, res) => {
         });
       });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, code: 500, error: err.message });
   }
 };
 

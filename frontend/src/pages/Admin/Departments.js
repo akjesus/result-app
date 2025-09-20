@@ -52,13 +52,13 @@ export default function DepartmentsPage() {
 
   function fetchDepartments() {
     getDepartments()
-      .then(res => setDepartments(res.data))
+      .then(res => setDepartments(res.data.departments))
       .catch(err => console.error(err));
   }
 
   function fetchSchools() {
     getSchools()
-      .then(res => setSchools(res.data))
+      .then(res => setSchools(res.data.schools))
       .catch(err => console.error(err));
   }
 

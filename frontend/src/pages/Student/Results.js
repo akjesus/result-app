@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getSessions, getLevels } from "../../api/schools";
+import {getResults} from "../../api/students";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Container,
   Box,
@@ -21,25 +25,57 @@ export default function StudentResults() {
     level: "",
     semester: "",
   });
+  // State for sessions, levels
+  const [sessions, setSessions] = useState([]);
+  const [levels, setLevels] = useState([]);
+  // Fetch sessions
+  useEffect(() => {
+    getSessions()
+      .then(res => {
+        setSessions(res.data.sessions || []);
+      })
+      .catch(console.error);
+  }, []);
+
+  // Fetch levels
+  useEffect(() => {
+    getLevels()
+      .then(res => {
+        setLevels(res.data.levels || []);
+      })
+      .catch((error=> {
+       toast.error(error.response.data.message);
+        console.log(error);
+      }));
+  }, []);
+
+  // Fetch semesters
 
   const [results, setResults] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
-      ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
   const handleSearch = () => {
-    // Example results (replace with API later)
-    const sampleResults = [
-      { code: "GST101", title: "Use of English I", grade: "A", credit: 2 },
-      { code: "MTH101", title: "Calculus I", grade: "B", credit: 3 },
-      { code: "CHM101", title: "General Chemistry", grade: "C", credit: 3 },
-    ];
-
-    setResults(sampleResults);
+    getResults(formData)
+    .then(res=> {
+      if(res.data.results) {
+        toast.success("Results retrieved successfully!");
+        setResults(res.data.results);
+        return;
+      }
+      toast.info(res.data.message)
+      setResults([]);
+    })
+    .catch(error=> {
+      toast.error(error.response.data.message);
+      console.log(error.response)
+      setResults([]);
+    })
+   
   };
 
   const handleDownloadPDF = () => {
@@ -68,6 +104,8 @@ export default function StudentResults() {
   };
 
   return (
+    <>
+    <ToastContainer />
     <Container sx={{ mt: 6 }}>
       {/* Search Form */}
       <Paper
@@ -91,43 +129,48 @@ export default function StudentResults() {
           label="Session"
           name="session"
           value={formData.session}
-          onChange={handleChange}
+          onChange={e => setFormData(prev => ({ ...prev, session: e.target.value }))}
           fullWidth
           sx={{ mb: 3 }}
         >
-          <MenuItem value="2023/2024">2023/2024</MenuItem>
-          <MenuItem value="2024/2025">2024/2025</MenuItem>
+          <MenuItem value="">Select Session</MenuItem>
+          {sessions.map(ses => (
+            <MenuItem key={ses.id} value={ses.id}>{ses.name}</MenuItem>
+          ))}
         </TextField>
 
-        {/* Level */}
+        {/* Level Dropdown */}
         <TextField
           select
           label="Level"
           name="level"
           value={formData.level}
-          onChange={handleChange}
+          onChange={e => setFormData(prev => ({ ...prev, level: e.target.value }))}
           fullWidth
           sx={{ mb: 3 }}
         >
-          <MenuItem value="100">100</MenuItem>
-          <MenuItem value="200">200</MenuItem>
-          <MenuItem value="300">300</MenuItem>
-          <MenuItem value="400">400</MenuItem>
+          <MenuItem value="">Select Level</MenuItem>
+          {levels.map(lvl => (
+            <MenuItem key={lvl.id} value={lvl.id}>{lvl.name || lvl}</MenuItem>
+          ))}
         </TextField>
 
-        {/* Semester */}
+        {/* Semester Dropdown */}
         <TextField
           select
           label="Semester"
           name="semester"
           value={formData.semester}
-          onChange={handleChange}
+          onChange={e => setFormData(prev => ({ ...prev, semester: e.target.value }))}
           fullWidth
           sx={{ mb: 3 }}
         >
-          <MenuItem value="First">First Semester</MenuItem>
-          <MenuItem value="Second">Second Semester</MenuItem>
+          <MenuItem value="">Select Semester</MenuItem>
+          <MenuItem value="1">First</MenuItem>
+          <MenuItem value="2">Second</MenuItem>
         </TextField>
+
+        {/* Removed duplicate Level and Semester dropdowns */}
 
         <Button
           variant="contained"
@@ -180,5 +223,6 @@ export default function StudentResults() {
         </Box>
       )}
     </Container>
+    </>
   );
 }

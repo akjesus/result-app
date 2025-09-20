@@ -1,6 +1,8 @@
 // src/pages/Auth/Login.js
 import React, { useState } from "react";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Box,
   Button,
@@ -21,58 +23,33 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-
-  //   // Temporary hardcoded login check
-  //   if (
-  //     (identifier === "MU/PH/24/0001" ||
-  //       identifier === "student@madukauniversity.edu.ng") &&
-  //     password === "student1234"
-  //   ) {
-  //     localStorage.setItem("token", "fake-student-token");
-  //     localStorage.setItem("role", "student");
-  //     navigate("/student/dashboard"); // ✅ use navigate, not window.location.href
-  //     return;
-  //   }
-
-  //   if (
-  //     identifier === "admin@madukauniversity.edu.ng" &&
-  //     password === "admin1234"
-  //   ) {
-  //     localStorage.setItem("token", "fake-admin-token");
-  //     localStorage.setItem("role", "admin");
-  //     navigate("/admin/dashboard"); // ✅ use navigate
-  //     return;
-  //   }
-
-  //   alert("Invalid credentials");
-  // };
-      // with API
-    
-    
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError({ email: "", password: "" });
 
     try {
-      console.log("Submitting:", { email, password });
       const res = await axios.post("http://localhost:5000/api/auth/login", {
        email, password
       });
-      console.log(res.data)
       if (res.data.success) {
+        console.log(res.data)
+        
         // Save token & role in localStorage/session
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("role", res.data.role);
 
         // Redirect based on role
-        if (res.data.role === "admin") {
-          navigate("/admin/dashboard");
+        if (res.data.role === "admin" || res.data.role === "superadmin") {
+          toast.success(res.data.message);
+          setTimeout(() => {navigate("/admin/dashboard")}, 2000);
         } else if (res.data.role === "student") {
-          navigate("/student/dashboard");
+          toast.success(res.data.message);
+          setTimeout(() => {navigate("/student/dashboard")}, 2000);
         } else {
-          navigate("/"); // fallback
+          toast.error(res.data.message)
+          setTimeout(() => {navigate("/")}, 2000);
+          // fallback
         }
       }
     } catch (err) {
@@ -84,16 +61,18 @@ function Login() {
         } else if (message.includes("password")) {
           setError((prev) => ({ ...prev, password: message }));
         } else {
-          alert(message);
+          toast.error(message);
         }
       } else {
-        alert("Server not reachable");
+        toast.warning(err.response.data.message);
       }
     }
   };
 
 
   return (
+    <>
+    <ToastContainer/>
     <Box
       sx={{
         backgroundImage:
@@ -175,6 +154,7 @@ function Login() {
         </CardContent>
       </Card>
     </Box>
+    </>
   );
 }
 

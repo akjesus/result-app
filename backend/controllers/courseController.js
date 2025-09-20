@@ -4,19 +4,18 @@ const db = require("../config/database");
 // Get all courses with pagination
 exports.getAllCourses = async (req, res) => {
   const page = parseInt(req.query.page) || 1;   
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || null;
     const offset = (page - 1) * limit;
-    try {
-        const [courses] = await db.query(`
-            SELECT courses.name as title, courses.code, courses.credit_load as credit,
-            IF(courses.active, 'true', 'false') AS active,
+    let query = `SELECT courses.id as id, courses.name as title, courses.code, courses.credit_load as credit,
+            IF(courses.active, 'Yes', 'No') AS active,
             departments.name AS departments, levels.name AS level, semesters.name AS semester
             FROM courses
             JOIN departments ON courses.department_id = departments.id
             JOIN levels ON courses.level_id = levels.id
-            JOIN semesters ON courses.semester_id = semesters.id
-            LIMIT ? OFFSET ?
-        `, [limit, offset]);
+            JOIN semesters ON courses.semester_id = semesters.id`
+    try {
+        if(limit) query += " LIMIT ? OFFSET ?"
+        const [courses] = await db.query(query, [limit, offset]);
         const [[{ total }]] = await db.query('SELECT COUNT(*) as total FROM courses');
         return res.status(200).json({success: true, code: 200,
             courses,

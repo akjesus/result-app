@@ -1,4 +1,10 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
+import { getCourses } from "../../api/schools";
+import { getDepartments } from "../../api/departments";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import {
   Box,
   Typography,
@@ -26,42 +32,36 @@ import {
 import { Edit, Delete } from "@mui/icons-material";
 
 // ✅ Departments List
-const departments = [
-  "Medicine and Surgery",
-  "Accounting",
-  "Economics",
-  "International Relations",
-  "Mass Communication",
-  "Computer Science",
-  "Cyber Security",
-  "Information Technology",
-  "Software Engineering",
-  "Civil Engineering",
-  "Computer Engineering",
-  "Electrical and Electronics Engineering",
-  "Mechanical Engineering",
-  "Mechatronics Engineering",
-  "Medical Laboratory Sciences",
-  "Nursing Sciences",
-  "Physiotherapy",
-  "Public Health",
-  "Radiography",
-  "Pharmacy",
-];
+
+
+
 
 const levels = ["100", "200", "300", "400", "500", "600"];
 
 export default function AdminCourses() {
-  const [courses, setCourses] = useState([
-    {
-      code: "CSC101",
-      title: "Introduction to Computer Science",
-      departments: ["Computer Science"],
-      levels: ["100"],
-      credit: 3,
-      status: "Active",
-    },
-  ]);
+  // State for courses and departments
+  const [courses, setCourses] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  // Fetch departments from API
+  useEffect(() => {
+    getDepartments()
+      .then(res => {
+        setDepartments(res.data.departments || []);
+        toast.success("Departments Fetched!");
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    getCourses()
+      .then((res) => {
+        console.log(res.data.courses)
+        toast.success("All Courses Fetched!")
+        setCourses(res.data.courses || [])}
+
+    )
+      .catch(console.error);
+  }, []);
 
   const [open, setOpen] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
@@ -71,7 +71,7 @@ export default function AdminCourses() {
     departments: [],
     levels: [],
     credit: "",
-    status: "",
+    active: "",
   });
 
   // Pagination
@@ -90,7 +90,7 @@ export default function AdminCourses() {
         departments: [],
         levels: [],
         credit: "",
-        status: "",
+        active: "",
       });
       setEditIndex(null);
     }
@@ -106,14 +106,11 @@ export default function AdminCourses() {
   // ✅ Handle Department with "All" toggle
   const handleDepartmentChange = (event) => {
     const value = event.target.value;
-
     if (value.includes("All")) {
       if (newCourse.departments.length === departments.length) {
-        // Unselect all
         setNewCourse({ ...newCourse, departments: [] });
       } else {
-        // Select all
-        setNewCourse({ ...newCourse, departments: [...departments] });
+        setNewCourse({ ...newCourse, departments: [...departments.map(dep => dep.name)] });
       }
     } else {
       setNewCourse({ ...newCourse, departments: value });
@@ -190,7 +187,7 @@ export default function AdminCourses() {
             <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Levels</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Credit</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+            <TableCell sx={{ fontWeight: "bold" }}>active</TableCell>
             <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -201,10 +198,10 @@ export default function AdminCourses() {
               <TableRow key={index}>
                 <TableCell>{course.code}</TableCell>
                 <TableCell>{course.title}</TableCell>
-                <TableCell>{course.departments.join(", ")}</TableCell>
-                <TableCell>{course.levels.join(", ")}</TableCell>
+                <TableCell>{course.departments}</TableCell>
+                <TableCell>{course.level}</TableCell>
                 <TableCell>{course.credit}</TableCell>
-                <TableCell>{course.status}</TableCell>
+                <TableCell>{course.active}</TableCell>
                 <TableCell>
                   <IconButton color="primary" onClick={() => handleOpen(course, index)}>
                     <Edit />
@@ -260,25 +257,25 @@ export default function AdminCourses() {
 
           {/* ✅ Department Multi-Select Dropdown */}
 <FormControl sx={{ mt: 2, width: "50%" }}>
-  <InputLabel>Departments</InputLabel>
-  <Select
-    multiple
-    value={newCourse.departments}
-    onChange={handleDepartmentChange}
-    input={<OutlinedInput label="Departments" />}
-    renderValue={(selected) => selected.join(", ")}
-  >
-    <MenuItem value="All">
-      <Checkbox checked={newCourse.departments.length === departments.length} />
-      <ListItemText primary="All" />
-    </MenuItem>
-    {departments.map((dept) => (
-      <MenuItem key={dept} value={dept}>
-        <Checkbox checked={newCourse.departments.includes(dept)} />
-        <ListItemText primary={dept} />
-      </MenuItem>
-    ))}
-  </Select>
+             <InputLabel>Departments</InputLabel>
+             <Select
+               multiple
+               value={newCourse.departments}
+               onChange={handleDepartmentChange}
+               input={<OutlinedInput label="Departments" />}
+               renderValue={(selected) => selected.join(", ")}
+             >
+               <MenuItem value="All">
+                 <Checkbox checked={newCourse.departments.length === departments.length} />
+                 <ListItemText primary="All" />
+               </MenuItem>
+               {departments.map((dept) => (
+                 <MenuItem key={dept.id} value={dept.name}>
+                   <Checkbox checked={newCourse.departments.includes(dept.name)} />
+                   <ListItemText primary={dept.name} />
+                 </MenuItem>
+               ))}
+             </Select>
 </FormControl>
 
 {/* ✅ Level Multi-Select Dropdown */}
@@ -304,13 +301,13 @@ export default function AdminCourses() {
   </Select>
 </FormControl>
 
-          {/* ✅ Status (Text) */}
+          {/* ✅ active (Text) */}
           <TextField
             margin="dense"
-            label="Status"
-            name="status"
+            label="active"
+            name="active"
             fullWidth
-            value={newCourse.status}
+            value={newCourse.active}
             onChange={handleChange}
             sx={{ mt: 2 }}
           />

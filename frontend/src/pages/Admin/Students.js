@@ -1,3 +1,5 @@
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -24,32 +26,75 @@ import {
 import { Edit, Delete, UploadFile, Download } from "@mui/icons-material";
 
 // Mock API imports (replace with actual API calls)
-import { getSchools } from "../../api/schools";
+import { getSchools, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
+import { getStudents, createStudent } from "../../api/students";
 
 export default function AdminStudents() {
-  const [students, setStudents] = useState([
-    {
-      fullName: "John Doe",
-      matric: "MU/CS/24/0001",
-      school: "School of Computing",
-      department: "Computer Science",
-      level: "100",
-      email: "johndoe@example.com",
-    },
-    {
-      fullName: "Mary Jane",
-      matric: "MU/PH/24/0002",
-      school: "School of Pharmacy",
-      department: "Pharmacy",
-      level: "200",
-      email: "maryjane@example.com",
-    },
-  ]);
+  const handleDownloadSampleCSV = () => {
+    // You can change the endpoint to your actual sample CSV route
+    fetch('http://localhost:5000/api/students/bulk-download', {
+      headers: {
+          'Content-Type': 'application/json',
+         'Authorization': `Bearer ${localStorage.getItem("token")}` 
+          }
+    })
+      .then((res) => res.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'students-sample.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      })
+      .catch(() => alert('Failed to download sample CSV!'));
+  };
+  // Bulk upload handler
+  const handleBulkUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const response = await fetch('http://localhost:5000/api/students/bulk-upload', {
+        method: 'POST',
+        body: formData,
+       headers: {
+         'Authorization': `Bearer ${localStorage.getItem("token")}` 
+          }
+      });
+      const result = await response.json();
+      if (response.ok) {
+        toast.info(result.message || 'Bulk upload successful!');
+        // Optionally, refresh students list
+        fetch('/api/students')
+          .then((res) => res.json())
+          .then((data) => setStudents(data.users || []));
+      } else {
+        toast.error(result.error || 'Bulk upload failed!');
+      }
+    } catch (err) {
+      toast.error('Bulk upload failed!');
+      console.log(err);
+    }
+  };
+
+  // Fetch students from API and setStudents
+  const [students, setStudents] = useState([]);
+
+  useEffect(() => {
+   getStudents().then((res) => {
+        setStudents(res.data.students || []);
+        toast.success(`Students fetched `);  
+      })
+      .catch((error) => console.log(error));
+  }, []);
 
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const levels = ["100", "200", "300", "400"];
+  const [levels, setLevels] = useState([]);
 
   const [open, setOpen] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
@@ -73,8 +118,13 @@ export default function AdminStudents() {
 
   // Fetch schools & departments
   useEffect(() => {
-    getSchools().then((res) => setSchools(res.data)).catch(console.error);
-    getDepartments().then((res) => setDepartments(res.data)).catch(console.error);
+    getSchools().then((res) => setSchools(res.data.schools)).catch(console.error);
+    getDepartments().then((res) => setDepartments(res.data.departments)).catch(console.error);
+    getLevels().
+    then((res)=> {
+      setLevels(res.data.levels)}
+    ).
+    catch(error=> toast.error(error.message))
   }, []);
 
   const handleOpen = (student = null, index = null) => {
@@ -96,14 +146,16 @@ export default function AdminStudents() {
       const updated = [...students];
       updated[editIndex] = newStudent;
       setStudents(updated);
+
     } else {
       setStudents([...students, newStudent]);
+       console.log(newStudent);
     }
     handleClose();
   };
 
   const handleDelete = (index) => {
-    if (window.confirm("Are you sure you want to delete this student?")) {
+    if (toast.info("Are you sure you want to delete this student?")) {
       const updated = students.filter((_, i) => i !== index);
       setStudents(updated);
     }
@@ -120,15 +172,16 @@ export default function AdminStudents() {
   return (
     <Box>
       <Typography variant="h5" gutterBottom>Manage Students</Typography>
+        <ToastContainer />
 
       {/* Add / Bulk Upload / Download */}
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
         <Button variant="contained" sx={{ bgcolor: "#2C2C78", ":hover": { bgcolor: "#1f1f5c" } }} onClick={() => handleOpen()}>Add Student</Button>
         <Button variant="outlined" component="label" startIcon={<UploadFile />}>
           Bulk Upload (CSV)
-          <Input type="file" accept=".csv" sx={{ display: "none" }} />
+          <Input type="file" accept=".csv" sx={{ display: "none" }} onChange={handleBulkUpload} />
         </Button>
-        <Button variant="outlined" startIcon={<Download />}>Download Sample CSV</Button>
+  <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadSampleCSV}>Download Sample CSV</Button>
       </Box>
 
       {/* Filters */}
@@ -154,7 +207,7 @@ export default function AdminStudents() {
           sx={{ minWidth: 120 }}
         >
           <MenuItem value="">All</MenuItem>
-          {levels.map((l) => (<MenuItem key={l} value={l}>{l}</MenuItem>))}
+          {levels.map((l) => (<MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>))}
         </TextField>
       </Box>
 
@@ -202,7 +255,8 @@ export default function AdminStudents() {
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editIndex !== null ? "Edit Student" : "Add Student"}</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="Full Name" name="fullName" fullWidth value={newStudent.fullName} onChange={handleChange} />
+          <TextField margin="dense" label="First Name" name="firstName" fullWidth value={newStudent.firstName} onChange={handleChange} />
+          <TextField margin="dense" label="Last Name" name="lastName" fullWidth value={newStudent.lastName} onChange={handleChange} />
           <TextField margin="dense" label="Matric Number" name="matric" fullWidth value={newStudent.matric} onChange={handleChange} />
 
           <FormControl fullWidth margin="dense">
@@ -217,14 +271,14 @@ export default function AdminStudents() {
             <Select name="department" value={newStudent.department} onChange={handleChange}>
               {departments
                 .filter((d) => !newStudent.school || d.school === newStudent.school)
-                .map((d) => (<MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>))}
+                .map((d) => (<MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>))}
             </Select>
           </FormControl>
 
           <FormControl fullWidth margin="dense">
             <InputLabel>Level</InputLabel>
             <Select name="level" value={newStudent.level} onChange={handleChange}>
-              {levels.map((l) => (<MenuItem key={l} value={l}>{l}</MenuItem>))}
+              {levels.map((l) => (<MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>))}
             </Select>
           </FormControl>
 

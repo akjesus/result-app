@@ -4,63 +4,69 @@ const Student = require("../models/studentModel");
 
 // Get all results with pagination
 exports.getAllResults = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const department = parseInt(req.query.department) || null;
-  const level = parseInt(req.query.level) || null;
-  try {
-    const offset = (page - 1) * limit;
-        let query = `SELECT results.cat_score, results.exam_score, results.grade, students.first_name, students.last_name, 
-                                courses.name AS course, semesters.name AS semester,
-                                sessions.name AS session, departments.name AS department, levels.name AS level
-                                FROM results
-                                JOIN students ON results.registration_number = students.registration_number
-                                JOIN courses ON results.course_id = courses.id
-                                JOIN sessions ON results.session_id = sessions.id
-                                JOIN semesters ON results.semester_id = semesters.id
-                                JOIN levels ON students.level_id = levels.id
-                                JOIN departments ON students.department_id = departments.id`;
-        let countQuery = 'SELECT COUNT(*) as total FROM results';
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    // Accept department, level, session, semester from query params
+    const department = req.query.department ? parseInt(req.query.department) : null;
+    const level = req.query.level ? parseInt(req.query.level) : null;
+    const session = req.query.session ? parseInt(req.query.session) : null;
+    const semester = req.query.semester ? parseInt(req.query.semester) : null;
 
-        const conditions = ['results.blocked = 0'];
-        const params = [];
-
+    try {
+        const offset = (page - 1) * limit;
+        // Build dynamic WHERE clause and params
+        let whereClauses = ['results.blocked = 0'];
+        let params = [];
         if (department) {
-            conditions.push('departments.id = ?');
+            whereClauses.push('students.department_id = ?');
             params.push(department);
         }
-
         if (level) {
-            conditions.push('students.level_id = ?');
+            whereClauses.push('students.level_id = ?');
             params.push(level);
         }
-
-        if (conditions.length > 0) {
-            query += ' WHERE ' + conditions.join(' AND ');
-            countQuery += ' WHERE ' + conditions.join(' AND ');
+        if (session) {
+            whereClauses.push('results.session_id = ?');
+            params.push(session);
         }
-
-        // Add pagination params at the end for the main query
-        query += ' LIMIT ? OFFSET ?';
+        if (semester) {
+            whereClauses.push('results.semester_id = ?');
+            params.push(semester);
+        }
+        const whereSQL = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : '';
+        let query = `SELECT (results.cat_score + results.exam_score) as total_score, 
+            results.grade, CONCAT(students.first_name,' ', students.last_name)as student_name, 
+            courses.name AS course, semesters.name AS semester,
+            sessions.name AS session, departments.name AS department, levels.name AS level
+            FROM results
+            JOIN students ON results.registration_number = students.registration_number
+            JOIN courses ON results.course_id = courses.id
+            JOIN sessions ON results.session_id = sessions.id
+            JOIN semesters ON results.semester_id = semesters.id
+            JOIN levels ON students.level_id = levels.id
+            JOIN departments ON students.department_id = departments.id
+            ${whereSQL}
+            LIMIT ? OFFSET ?`;
+        let countQuery = `SELECT COUNT(*) as total FROM results
+            JOIN students ON results.registration_number = students.registration_number
+            ${whereSQL}`;
         const queryParams = [...params, limit, offset];
         const [results] = await Result.execute(query, queryParams);
-        // Only use filter params for count query
         const [[{ total }]] = await Result.execute(countQuery, params);
-
-    return res.status(200).json({
-        success: true, code: 200, message:"All results fetched successfully",
-      results,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ success: false, code: 500, message: error.message});
-  }
+        return res.status(200).json({
+            success: true, code: 200, message: "All results fetched successfully",
+            results,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
 };
 
 
@@ -202,37 +208,41 @@ exports.getResultsByStudent = async (req, res) => {
     if (!userDetails) {
         return res.status(404).json({ success: false, code: 404, message: 'User details not found' });  
     }
-    const registration_number = userDetails.registration_number;
-  try {
-    const {session_id, level_id, semester_id} = req.body;
-    if (!session_id || !level_id || !semester_id) {
-        return res.status(400).json({ success: false, code: 400, message: "Semester, Session and Levels are required!" });
+    const registration_number = userDetails.matric;
+    try {
+        // Destructure from query
+        const { session, level, semester } = req.query;
+        const session_id = session;
+        const level_id = level;
+        const semester_id = semester;
+        if (!session_id || !level_id || !semester_id) {
+            return res.status(400).json({ success: false, code: 400, message: "Semester, Session and Levels are required!" });
+        }
+        const [results] = await db.query(
+            `SELECT results.id, results.course_id, courses.code as code, courses.name AS title, students.first_name, 
+            students.last_name, students.registration_number, 
+            results.cat_score + results.exam_score AS total_score, results.grade,
+            courses.credit_load as credit, semesters.name as semester, sessions.name as session
+            FROM results
+            JOIN courses ON results.course_id = courses.id
+            JOIN students ON results.registration_number = students.registration_number
+            JOIN sessions ON results.session_id = sessions.id
+            JOIN semesters ON results.semester_id = semesters.id
+            WHERE results.registration_number = ?
+            AND results.session_id = ?
+            AND results.semester_id = ?
+            AND students.level_id = ? 
+            AND results.blocked = 0 `,
+            [registration_number, session_id, semester_id, level_id]
+        );
+        if(results.length === 0) {
+            return res.status(200).json({ success: true, code: 404, message: `No results found for this semester and session yet` });
+        }
+        return res.status(200).json({success: true, code: 200,results});
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ success: false, code: 500, message: err.message });
     }
-    const [results] = await db.query(
-      `SELECT results.id, results.course_id, courses.name AS course_name, students.first_name, 
-      students.last_name, students.registration_number, results.cat_score, results.exam_score, 
-      results.cat_score + results.exam_score AS total_score, results.grade,
-      courses.credit_load, semesters.name as semester, sessions.name as session
-             FROM results
-             JOIN courses ON results.course_id = courses.id
-             JOIN students ON results.registration_number = students.registration_number
-             JOIN sessions ON results.session_id = sessions.id
-             JOIN semesters ON results.semester_id = semesters.id
-             WHERE results.registration_number = ?
-             AND results.session_id = ?
-             AND results.semester_id = ?
-             AND students.level_id = ?  `
-             ,
-      [registration_number, session_id, semester_id, level_id]
-    );
-    if(results.length === 0) {
-        return res.status(404).json({ success: false, code: 404, message: 'No results found for this student' });
-    }
-    return res.status(200).json({success: true, code: 200,results});
-  } catch (err) {
-    console.log(err)
-    return res.status(500).json({ success: false, code: 500, message: err.message });
-  }
 };
 
 exports.getResultsByDepartment = async (req, res) => {

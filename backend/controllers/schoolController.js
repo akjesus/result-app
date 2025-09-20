@@ -1,6 +1,8 @@
 const Department = require("../models/departmentModel");
 const Faculty = require("../models/facultyModel")
 const db = require("../config/database");
+const Session = require("../models/sessionsModel");
+const Level = require("../models/levelModel")
 
 // Get all departments
 exports.getAllDepartments = async (req, res) => {
@@ -16,7 +18,7 @@ exports.getAllDepartments = async (req, res) => {
 exports.getAllFaculties = async (req, res) => {
     try {
         const faculties = await Faculty.getAllFaculties();
-        return res.status(200).json({ success: true, code: 200, faculties });
+        return res.status(200).json({ success: true, code: 200, schools: faculties });
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
@@ -112,3 +114,29 @@ exports.deleteDepartment = async (req, res) => {
     }
 };
 
+
+exports.getSessions = async (req, res) => {
+    try {
+        const sessions = await Session.getAllSessions();
+        if (!sessions) {
+            return res.status(404).json({ success: false, code: 404, message: 'No sessions found' });
+        }
+        return res.status(200).json({ success: true, code: 200, sessions });
+    } catch (error) {
+        console.log('Error fetching sessions:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+exports.getLevels = async (req, res) => {
+    try {
+        const levels = await Level.getAllLevels();
+        if (!levels) {
+            return res.status(404).json({ success: false, code: 404, message: 'No levels found' });
+        }
+        return res.status(200).json({ success: true, code: 200, levels });
+    } catch (error) {
+        console.log('Error fetching levels:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};

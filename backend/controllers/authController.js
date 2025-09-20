@@ -127,7 +127,6 @@ exports.getMe = async (req, res) => {
         return res.status(401).json({success: false, code: 401, message: "Unauthorized" });
     } 
     const decoded = jwt.verify(token, JWT_SECRET)
-    console.log(decoded)
     user = await Staff.findById(decoded.id) || await Student.findById(decoded.id);
     if (!user) {
         return res.status(404).json({ success: false, code: 404, message: "User not found" });
@@ -157,15 +156,16 @@ exports.changeStudentPassword = async (req, res)=> {
     if(!student) {
       return res.status(404).json({success: false, code: 404, message: "No student found"});
     }
+  
     const{old_password, new_password, new_password_confirm} = req.body;
     if(!old_password || !new_password || !new_password_confirm){
-      return res.status(400).json({success: false, code: 500, message:"All password fields required"})
+      return res.status(400).json({success: false, code: 400, message:"All password fields required"})
     }
     if(new_password !== new_password_confirm){
       return res.status(400).json({success: false, code: 500, message:"Passwords must match"})
     }
     //verify old password
-    const passwordMatch = old_password === student.password;
+    const passwordMatch = bcrypt.compare(old_password, student.password);
     if(!passwordMatch){
       return res.status(403).json({success: false, code: 403, message: "Old password is not correct!"});
     }
@@ -173,9 +173,8 @@ exports.changeStudentPassword = async (req, res)=> {
     return res.status(201).json({success: true, code: 201, message: "password changed successfully", changed: change});
   }
   catch(error) {
-    console.log(error);
+    console.log(error.message);
     return res.status(500).json({success: false, code: 500, message:error.message})
-
   }
 }
 

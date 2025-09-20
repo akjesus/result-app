@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {getProfile} from "../../api/students";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -9,15 +13,19 @@ import {
 
 export default function StudentProfile() {
   const [profilePic, setProfilePic] = useState(null);
-  const [profileData, setProfileData] = useState({
-    fullName: "John Doe",
-    matric: "MU/23/0001",
-    school: "School of Science",
-    department: "Computer Science",
-    email: "johndoe@madukauniversity.edu.ng",
-    phone: "+234 800 000 0000",
-    level: "200",
-  });
+  const [profileData, setProfileData] = useState({})
+
+
+   useEffect(() => {
+      getProfile()
+        .then(res => {
+          setProfileData(res.data.user || []);
+        })
+        .catch((error=> {
+         toast.error(error.response.data.message);
+          console.log(error.response);
+        }));
+    }, []);
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
@@ -28,10 +36,12 @@ export default function StudentProfile() {
 
   const handleSave = () => {
     // Later connect this with backend to update student profile
-    alert("Profile saved successfully!");
+    toast.success("Profile saved successfully!");
   };
 
   return (
+    <>
+    <ToastContainer/>
     <Container sx={{ mt: 4 }}>
       {/* Profile Picture */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
@@ -85,5 +95,6 @@ export default function StudentProfile() {
         </Button>
       </Box>
     </Container>
+    </>
   );
 }

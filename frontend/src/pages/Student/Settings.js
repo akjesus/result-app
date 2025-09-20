@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import {changePassword} from "../../api/students"
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Paper,
@@ -14,6 +18,7 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export default function StudentSettings() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -36,11 +41,36 @@ export default function StudentSettings() {
   };
 
   const handleSave = () => {
-    if (formData.newPassword !== formData.confirmPassword) {
-      alert("New passwords do not match!");
+    // Validate required fields
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      toast.error("All password fields are required!");
       return;
     }
-    alert("Settings updated successfully!");
+    if (formData.newPassword !== formData.confirmPassword) {
+      toast.error("New passwords do not match!");
+      return;
+    }
+    console.log(formData)
+    changePassword(formData)
+      .then(res=> {
+        if(res.data.success) {
+          toast.success(res.data.message);
+          setTimeout(() => {
+            navigate("/");
+          }, 2000);
+          return;
+        }
+        else {
+          console.log(res.data);
+          toast.info(res.data.message);
+          return;
+        } 
+      })
+      .catch(error=> {
+        toast.error(error.response?.data?.message || error.message);
+        console.log(error.response);
+      })
+    
   };
 
   const toggleShowPassword = (field) => {
@@ -48,6 +78,8 @@ export default function StudentSettings() {
   };
 
   return (
+    <>
+    <ToastContainer/>
     <Container sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
       <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 500, borderRadius: 3 }}>
         <Typography variant="h6" gutterBottom align="center">
@@ -68,10 +100,11 @@ export default function StudentSettings() {
           onChange={handleChange}
           fullWidth
           margin="normal"
+          required
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => toggleShowPassword("current")}>
+                <IconButton onClick={() => toggleShowPassword("current")}> 
                   {showPassword.current ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -88,10 +121,11 @@ export default function StudentSettings() {
           onChange={handleChange}
           fullWidth
           margin="normal"
+          required
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => toggleShowPassword("new")}>
+                <IconButton onClick={() => toggleShowPassword("new")}> 
                   {showPassword.new ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -108,10 +142,11 @@ export default function StudentSettings() {
           onChange={handleChange}
           fullWidth
           margin="normal"
+          required
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => toggleShowPassword("confirm")}>
+                <IconButton onClick={() => toggleShowPassword("confirm")}> 
                   {showPassword.confirm ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
               </InputAdornment>
@@ -144,5 +179,6 @@ export default function StudentSettings() {
         </Button>
       </Paper>
     </Container>
+    </>
   );
 }
