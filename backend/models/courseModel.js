@@ -12,17 +12,19 @@ class Course {
             level_id,
             semester_id,
             credit_load,
+            active,
     ) {
     const [result] = await db.query(
       `INSERT INTO courses 
-      (name, code, department_id, level_id, semester_id, credit_load, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      (name, code, department_id, level_id, semester_id, credit_load, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [   name,
             code, 
             department_id, 
             level_id,
             semester_id,
-            credit_load,]
+            credit_load,
+            active]
     );
     return result.insertId;
   }

@@ -15,8 +15,6 @@ const path = require("path");
 
 const app = express();
 
-
-
 // Middlewares
 app.use(cors());
 app.use(helmet());
@@ -33,15 +31,21 @@ app.get("/", (req, res) => {
 
 // Import Routes
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
+const studentRoutes = require("./routes/studentRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const resultRoutes = require("./routes/resultRoutes");
+const schoolRoutes = require("./routes/schoolRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 //Use Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/students", studentRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/results", resultRoutes);
+app.use("/api/schools", schoolRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Handle 404 errors for undefined routes
 app.use((req, res, next) => {

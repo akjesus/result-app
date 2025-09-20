@@ -117,6 +117,178 @@ class Result {
         );
         return result.affectedRows > 0;
       }
+//function to calculate CGPA for all students
+  static async calculateCGPA(registration_number) {
+    const [rows] = await db.query(`
+      SELECT
+        r.registration_number,
+        SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0 
+            ELSE 0.0
+          END * c.credit_load
+        ) AS total_quality_points,
+        SUM(c.credit_load) AS total_credit_hours,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS cgpa
+      FROM results r
+      JOIN courses c ON r.course_id = c.id
+      WHERE r.registration_number = ?
+      GROUP BY r.registration_number
+    `, [registration_number]);
+    return rows.length ? rows[0] : null;
+  }
+  //function to calculate average CGPA for all students in a department
+  static async calculateAverageCGPAByDepartment(departmentId) {
+    const [rows] = await db.query(`
+      SELECT
+        AVG(sub.cgpa) AS average_cgpa
+      FROM (
+        SELECT
+          r.registration_number,
+          (SUM(
+            CASE r.grade
+              WHEN 'A' THEN 5.0
+              WHEN 'B' THEN 4.0
+              WHEN 'C' THEN 3.0
+              WHEN 'D' THEN 2.0
+              WHEN 'E' THEN 1.0
+              WHEN 'F' THEN 0.0
+              ELSE 0.0
+            END * c.credit_load
+          ) / SUM(c.credit_load)) AS cgpa
+        FROM results r
+        JOIN courses c ON r.course_id = c.id
+        WHERE c.department_id = ?
+        GROUP BY r.registration_number
+      ) AS sub
+    `, [departmentId]);
+    return rows.length ? rows[0].average_cgpa : null;
+  }
 
+  static async calculateAllCGPA() {
+    const [rows] = await db.query(`
+      SELECT
+        r.registration_number,
+        SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) AS total_quality_points,
+        SUM(c.credit_load) AS total_credit_hours,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS cgpa
+      FROM results r
+      JOIN courses c ON r.course_id = c.id
+      GROUP BY r.registration_number
+    `);
+    return rows;
+  }
+
+  static async getHighestandLowestCGPA() {
+    const [rows] = await db.query(`
+      SELECT
+        r.registration_number, s.first_name, s.last_name, d.name AS department,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS cgpa
+      FROM results r
+      JOIN students s ON r.registration_number = s.registration_number
+      JOIN departments d ON s.department_id = d.id
+      JOIN courses c ON r.course_id = c.id
+      GROUP BY r.registration_number, s.first_name, s.last_name, department
+      ORDER BY cgpa DESC
+      LIMIT 1
+    `);
+    const highestCGPA = rows.length ? rows[0] : null;
+    const [lowRows] = await db.query(`
+      SELECT
+        r.registration_number,  s.first_name, s.last_name, d.name AS department,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS cgpa
+      FROM results r
+      JOIN students s ON r.registration_number = s.registration_number
+      JOIN departments d ON s.department_id = d.id
+      JOIN courses c ON r.course_id = c.id
+      GROUP BY r.registration_number, s.first_name, s.last_name, department
+      ORDER BY cgpa ASC
+      LIMIT 1
+    `);
+    const lowestCGPA = lowRows.length ? lowRows[0] : null;
+    return { highestCGPA, lowestCGPA };
+    
+  }
+  static async averageCGPA() {
+    const [rows] = await db.query(`
+      SELECT
+        AVG(sub.cgpa) AS average_cgpa
+      FROM (
+        SELECT
+          r.registration_number,
+          (SUM(
+            CASE r.grade
+              WHEN 'A' THEN 5.0
+              WHEN 'B' THEN 4.0
+              WHEN 'C' THEN 3.0
+              WHEN 'D' THEN 2.0
+              WHEN 'E' THEN 1.0
+              WHEN 'F' THEN 0.0
+              ELSE 0.0
+            END * c.credit_load
+          ) / SUM(c.credit_load)) AS cgpa
+        FROM results r
+        JOIN courses c ON r.course_id = c.id
+        GROUP BY r.registration_number
+      ) AS sub
+    `);
+    return rows.length ? rows[0].average_cgpa : null;
+  }
+  
 }
 module.exports = Result;

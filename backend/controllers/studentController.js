@@ -1,17 +1,26 @@
 const Student = require("../models/studentModel");
 const Staff = require("../models/staffModel");
 const bcrypt = require("bcrypt");
+const csvParser = require('csv-parser');
+const stream = require('stream');
 
 //get all users from the sql database and paginate the results
 
-exports.getAllUsers = async (req, res) => {
+exports.getAllStudents = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const department = parseInt(req.query.department) || null;
   const level = parseInt(req.query.level) || null;
   try {
     const offset = (page - 1) * limit;
-    let query = 'SELECT * FROM students';
+    let query = `SELECT  concat(first_name, ' ', last_name) AS fullName, 
+    email, registration_number as matric, username,
+    departments.name AS department, levels.name AS level,
+    faculties.name AS faculty 
+    FROM students
+    JOIN departments ON students.department_id = departments.id
+    JOIN levels ON students.level_id = levels.id
+    JOIN faculties ON departments.faculty_id = faculties.id`;
     let countQuery = 'SELECT COUNT(*) as total FROM students';
 
     const conditions = ['blocked = 0'];
@@ -35,12 +44,12 @@ exports.getAllUsers = async (req, res) => {
     // Add pagination params at the end for the main query
     query += ' LIMIT ? OFFSET ?';
     const queryParams = [...params, limit, offset];
-    const [users] = await Student.execute(query, queryParams);
+    const [students] = await Student.execute(query, queryParams);
     // Only use filter params for count query
     const [[{ total }]] = await Student.execute(countQuery, params);
 
-    return res.status(200).json({success: true, code: 500,
-      users,
+    return res.status(200).json({success: true, code: 200,
+      students,
       pagination: {
         page,
         limit,
@@ -50,7 +59,7 @@ exports.getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ success: false, code: 500, message: error });
+    return res.status(500).json({ success: false, code: 500, message: error.message });
   }
 }
 
@@ -70,26 +79,23 @@ exports.getUserById = async (req, res) => {
 };
 
 
-exports.createUser = async (req, res) => {
-    console.log("here", req.body)
+exports.createStudent = async (req, res) => {
     try {
          
-      const { firstName, lastName, email, username, password, role, department, level } = req.body;
+      const { firstName, lastName, email, username, password, department, level } = req.body;
        
-      if (!firstName || !lastName || !email || !username || !password || !role) {
+      if (!firstName || !lastName || !email || !username || !password || department || level) {
         return res.status(400).json({ success: false, code: 400, message: "All fields are required!" });
       }
 
-      if (role === 'student') {
-        if (!department || !level) {
-          return res.status(400).json({ success: false, code: 400, message:  "Department and level are required for students!" });
+        const existing = await Student.findByUsername(email);
+        if(existing) {
+          return res.status(409).json({success: false, code: 409, message: "Email exists already" })
         }
         const studentId = await Student.createStudent(firstName, lastName, email, username, password, department, level);
         return res.status(201).json({ success: true, code: 201, message:  "Student created successfully", id: studentId });
-      }
+    
 
-      const staffId = await Staff.createStaff(firstName, lastName, email, username, password);
-      res.status(201).json({ success: true, code: 201, message:  "Staff created successfully", id: staffId});
     } catch (err) {
       res.status(500).json({ success: false, code: 500, message:  err.message });
     }
@@ -178,4 +184,150 @@ exports.blockUser = async (req, res) => {
     }
 };
 
+exports.bulkUploadStudents = async (req, res) => {
+  try {
+    // Check if file is present
+    if (!req.files || !req.files.file) {
+      return res.status(400).json({ error: "CSV file is required" });
+    }
 
+    const csvFile = req.files.file;
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(csvFile.data);
+
+    const studentsToImsert = []; // for student fields
+    // We'll store them as arrays of [course_id, level_id, ... user_id], then link after
+
+    bufferStream
+      .pipe(csvParser())
+      .on("data", (row) => {
+        // Extract the fields from CSV row
+        // We'll parse them carefully, assuming columns are consistent
+        const {
+          department_id,
+          level_id,
+          registration_number,
+          first_name,
+          last_name,
+          email,
+          username,
+          password,
+          photo,
+        } = row;
+
+        // We'll store this row data
+        studentsToImsert.push({
+          department_id,
+          level_id,
+          registration_number,
+          first_name,
+          last_name,
+          email,
+          username,
+          password,
+          photo,
+        });
+      })
+      .on("end", async () => {
+        if (!studentsToImsert.length) {
+          return res
+            .status(400)
+            .json({ error: "No valid student data found in CSV" });
+        }
+
+        let insertedCount = 0;
+
+        // We'll process each question row individually
+        for (const qRow of studentsToImsert) {
+          // Insert new question
+
+            const [insertRes] = await db.query(
+              `INSERT INTO students 
+               (department_id, level_id, registration_number, first_name, last_name, email, username,
+                password, photo, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              [
+                qRow.department_id,
+                qRow.level_id,
+                qRow.registration_number,
+                qRow.first_name,
+                qRow.last_name,
+                qRow.email,
+                qRow.username,
+                qRow.password,
+                qRow.photo,
+              ]
+            );
+            insertedCount++;
+
+        }
+        res.status(201).json({
+          message: `${insertedCount} students successfully uploaded`,
+        });
+      });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.bulkDownloadStudents = async (req, res) => {
+  try {
+    const [students] = await Student.execute(`
+      SELECT registration_number as RegitrationNumber, concat(first_name,' ', last_name) as Fullname, 
+      email as Email, departments.name as Department, levels.name As Level, 
+      faculties.name as Faculty
+      FROM students
+      JOIN departments ON students.department_id = departments.id
+      JOIN levels ON students.level_id = levels.id
+      JOIN faculties ON departments.faculty_id = faculties.id
+      ORDER BY students.registration_number DESC
+    `);
+    if (!students.length) {
+      return res.status(404).json({ error: "No students found" });
+    }
+    // Convert to CSV format
+    const csvHeaders = [
+      "RegitrationNumber",
+      "Fullname",
+      "Email",
+      "Department",
+      "Level",
+      "Faculty",
+    ];
+    const csvRows = [
+      csvHeaders.join(","), // Header row
+      ...students.map((s) =>
+        csvHeaders.map((header) => `"${s[header] || ""}"`).join(",")
+      ),
+    ];
+    const csvContent = csvRows.join("\n");
+    res.setHeader("Content-Disposition", "attachment; filename=students.csv");
+    res.setHeader("Content-Type", "text/csv");
+    res.status(200).send(csvContent);
+  }
+  catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getMyProfile = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(404).json({ success: false, code: 404, message: "User not found" });
+    }
+    const userDetails = await Student.findById(user.id);
+    if (!userDetails) {
+      return res.status(404).json({ success: false, code: 404, message: "User details not found" });
+    } 
+    return res.status(200).json({ success: true, code: 200, userDetails });
+  }
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, code: 500, message: err.message });
+  }
+
+}

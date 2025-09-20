@@ -8,8 +8,9 @@ exports.getAllCourses = async (req, res) => {
     const offset = (page - 1) * limit;
     try {
         const [courses] = await db.query(`
-            SELECT courses.name, courses.code, courses.credit_load,  courses.created_at,
-            courses.updated_at, departments.name AS department, levels.name AS level, semesters.name AS semester
+            SELECT courses.name as title, courses.code, courses.credit_load as credit,
+            IF(courses.active, 'true', 'false') AS active,
+            departments.name AS departments, levels.name AS level, semesters.name AS semester
             FROM courses
             JOIN departments ON courses.department_id = departments.id
             JOIN levels ON courses.level_id = levels.id
@@ -39,7 +40,8 @@ exports.getCourseById = async (req, res) => {
     try {
         const [courses] = await db.query(`
             SELECT courses.name, courses.code, courses.credit_load,  courses.created_at,
-            courses.updated_at, departments.name AS department, levels.name AS level, semesters.name AS semester
+            courses.updated_at, departments.name AS department, levels.name AS level, semesters.name AS semester,
+            IF(courses.active, 'true', 'false') AS active
             FROM courses
             JOIN departments ON courses.department_id = departments.id
             JOIN levels ON courses.level_id = levels.id
@@ -62,15 +64,20 @@ exports.createCourse = async (req, res) => {
             department_id, 
             level_id,
             semester_id,
-            credit_load, } = req.body;
+            credit_load,
+            active } = req.body;
     try {
+        if (!name || !code || !department_id || !level_id || !semester_id || !credit_load || !active) {
+            return res.status(400).json({ success: false, code: 400, message: 'All fields are required' });
+        }
         const newCourseId = await Course.createCourse(
             name,
             code, 
             department_id, 
             level_id,
             semester_id,
-            credit_load,);
+            credit_load,
+            active );
         // Fetch the newly created course with joined fields
         const [courses] = await db.query(`
             SELECT courses.name, courses.code, courses.credit_load,  courses.created_at,
@@ -145,5 +152,16 @@ exports.deleteCourse = async (req, res) => {
     } catch (error) {
         console.log('Error deleting course:', error);
         return res.status(500).json({ success: false, code: 500, message: error });
+    }
+};
+
+
+exports.getAllDepartments = async (req, res) => {
+    try {
+        const departments = await Course.getAllDepartments();
+        return res.status(200).json({ success: true, code: 200, departments });
+    } catch (error) {
+        console.log('Error fetching departments:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };

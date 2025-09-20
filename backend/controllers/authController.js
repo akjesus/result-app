@@ -12,13 +12,13 @@ const JWT_SECRET = process.env.JWT_SECRET; // Store in env file
 exports.login = async (req, res) => {
   let user;
     try {
-      const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ success: false, code: 400, message: "Username and password are required" });
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ success: false, code: 400, message: "Email and password are required" });
       }
-      user = await Staff.findByUsername(username);
+      user = await Staff.findByUsername(email);
       if (!user) {
-        user = await Student.findByUsername(username);
+        user = await Student.findByUsername(email);
         if (!user) {
         return res.status(401).json({ success: false, code: 401, message: "Invalid Username" });
           }
@@ -35,7 +35,7 @@ exports.login = async (req, res) => {
       }
       // Generate JWT token
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
-      res.status(200).json({ success: true, code: 200, message: "Login successful", token });
+      res.status(200).json({ success: true, code: 200, role:user.role, message: "Login successful", token });
 
     } catch (err) {
       console.log("Login error:", err);
@@ -95,7 +95,6 @@ exports.verifyToken = (req, res, next) => {
       if (!token || blacklistedTokens.has(token)) {
           return res.status(401).json({ success: false, code: 401, message: "Unauthorized or logged out, please login!" });
       }
-  
       jwt.verify(token, JWT_SECRET, (err, user) => {
           if (err) {
               return res.status(403).json({ success: false, code: 403, message: "Invalid token, please login again!" });
@@ -147,7 +146,54 @@ exports.getMe = async (req, res) => {
 
 exports.restrictTo =  (...roles) =>  (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      res.status(401).json({ success: false, code: 401, message: "Unauthorised, contact Admin!"});
+      return res.status(401).json({ success: false, code: 401, message: "Unauthorised, contact Admin!"});
     }
     next();
   };
+
+exports.changeStudentPassword = async (req, res)=> {
+  try {
+    const student = await Student.findByIdPass(req.user.id);
+    if(!student) {
+      return res.status(404).json({success: false, code: 404, message: "No student found"});
+    }
+    const{old_password, new_password, new_password_confirm} = req.body;
+    if(!old_password || !new_password || !new_password_confirm){
+      return res.status(400).json({success: false, code: 500, message:"All password fields required"})
+    }
+    if(new_password !== new_password_confirm){
+      return res.status(400).json({success: false, code: 500, message:"Passwords must match"})
+    }
+    //verify old password
+    const passwordMatch = old_password === student.password;
+    if(!passwordMatch){
+      return res.status(403).json({success: false, code: 403, message: "Old password is not correct!"});
+    }
+  const change =  await Student.changePassword(new_password, student.id)
+    return res.status(201).json({success: true, code: 201, message: "password changed successfully", changed: change});
+  }
+  catch(error) {
+    console.log(error);
+    return res.status(500).json({success: false, code: 500, message:error.message})
+
+  }
+}
+
+exports.resetPassword = async (req, res)=> {
+  try {
+      const {user} = req.body;
+  if(!user) return res.status(400).json({success: false, code: 400, message: "No user in request!"});
+  const userExists = await Student.findByUsername(user);
+
+  const password = await bcrypt.hash("password", 10)
+  if(!userExists) return res.status(404).json({success: false, code: 404, message: "User not found!"});
+  const reset = await Student.resetPassword(userExists.id, password);
+  if(!reset)  return res.status(500).json({success: false, code: 500, message: "Password not reset, try again!!"})
+  return res.status(200).json({success: true, code: 200, message: "Password reset successfully!"})
+
+  }
+  catch(error) {
+     return res.status(500).json({success: false, code: 500, message: error.message})
+  }
+
+}

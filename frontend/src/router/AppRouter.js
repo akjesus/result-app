@@ -1,0 +1,69 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "../pages/Auth/Login";
+import ProtectedRoute from "./ProtectedRoute";
+import ForgotPassword from "../pages/Auth/ForgotPassword";
+
+// Admin Pages
+import AdminDashboard from "../pages/Admin/Dashboard";
+import AdminStudents from "../pages/Admin/Students";
+import AdminCourses from "../pages/Admin/Courses";
+import AdminDepartments from "../pages/Admin/Departments";
+import AdminSchools from "../pages/Admin/Schools";
+import AdminResults from "../pages/Admin/Results";
+import AdminGrades from "../pages/Admin/Grades";
+import AdminSettings from "../pages/Admin/Settings";
+import AdminLayout from "../components/AdminLayout";
+
+// Student Pages
+import StudentDashboard from "../pages/Student/Dashboard";
+import Profile from "../pages/Student/Profile";
+import Results from "../pages/Student/Results";
+import StudentLayout from "../components/StudentLayout";
+import Settings from "../pages/Student/Settings";
+
+const AppRouter = () => (
+  <BrowserRouter>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+
+      {/* Admin Routes (protected + wrapped in AdminLayout) */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="students" element={<AdminStudents />} />
+        <Route path="courses" element={<AdminCourses />} />
+        <Route path="departments" element={<AdminDepartments />} />
+        <Route path="schools" element={<AdminSchools />} />
+        <Route path="results" element={<AdminResults />} />
+        <Route path="grades" element={<AdminGrades />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
+
+      {/* Student Routes (protected + wrapped in StudentLayout) */}
+      <Route
+        path="/student"
+        element={
+          <ProtectedRoute roles={["student"]}>
+            <StudentLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="results" element={<Results />} />
+         <Route path="settings" element={<Settings />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>
+);
+
+export default AppRouter;

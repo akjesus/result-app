@@ -1,5 +1,6 @@
 const Result = require("../models/resultModel");
 const db = require("../config/database");
+const Student = require("../models/studentModel");
 
 // Get all results with pagination
 exports.getAllResults = async (req, res) => {
@@ -73,13 +74,10 @@ exports.getResultById = async (req, res) => {
         }
         return res.status(200).json({success: true, code: 200, result});
     } catch (error) {
-        console.log('Error fetching result by ID:', error.message);
+        console.log(`Error fetching result by ID:${resultId}`, error.message);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };
-
-
-// Create a new result
 
 exports.createResult = async (req, res) => {
     const { registration_number, course_id, cat_score, exam_score, semester_id, session_id } = req.body;
@@ -198,12 +196,17 @@ exports.bulkUploadResults = async (req, res) => {
 };
 
 
-
 exports.getResultsByStudent = async (req, res) => {
+    const user = req.user;
+    const userDetails = await Student.findById(user.id);
+    if (!userDetails) {
+        return res.status(404).json({ success: false, code: 404, message: 'User details not found' });  
+    }
+    const registration_number = userDetails.registration_number;
   try {
-    const {registration_number} = req.body;
-    if (!registration_number) {
-        return res.status(400).json({ success: false, code: 400, message: "Registration number is required!" });
+    const {session_id, level_id, semester_id} = req.body;
+    if (!session_id || !level_id || !semester_id) {
+        return res.status(400).json({ success: false, code: 400, message: "Semester, Session and Levels are required!" });
     }
     const [results] = await db.query(
       `SELECT results.id, results.course_id, courses.name AS course_name, students.first_name, 
@@ -215,8 +218,12 @@ exports.getResultsByStudent = async (req, res) => {
              JOIN students ON results.registration_number = students.registration_number
              JOIN sessions ON results.session_id = sessions.id
              JOIN semesters ON results.semester_id = semesters.id
-             WHERE results.registration_number = ?`,
-      [registration_number]
+             WHERE results.registration_number = ?
+             AND results.session_id = ?
+             AND results.semester_id = ?
+             AND students.level_id = ?  `
+             ,
+      [registration_number, session_id, semester_id, level_id]
     );
     if(results.length === 0) {
         return res.status(404).json({ success: false, code: 404, message: 'No results found for this student' });
@@ -314,3 +321,57 @@ exports.blockResult = async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };
+
+exports.calculateCGPA = async (req, res) => {
+    const registration_number = req.params.registration_number;
+    try {
+        const cgpa = await Result.calculateCGPA(registration_number);
+        return res.status(200).json({ success: true, code: 200, registration_number, cgpa });
+    } catch (error) {
+        console.log('Error calculating CGPA:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+}
+//function to calculate CGPA for all students
+exports.calculateAllCGPA = async (req, res) => {
+    try {
+        const cgpas = await Result.calculateAllCGPA();
+        return res.status(200).json({ success: true, code: 200, cgpas });
+    } catch (error) {
+        console.log('Error calculating CGPA for all students:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+//get highest and lowest CGPA from all students
+exports.getHighestandLowestCGPA = async (req, res) => {
+    try {
+        const { highest, lowest } = await Result.getHighestandLowestCGPA();
+        return res.status(200).json({ success: true, code: 200, highest, lowest });
+    } catch (error) {
+        console.log('Error fetching highest and lowest CGPA:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+//get all results for a student 
+exports.getAllResultsForStudent = async (req, res) => {
+    try {
+    const student = await Student.findById(req.user.id);
+
+    if(!student) {
+        return res.status(404).json({success: false, code: 404, message: "Student not found!"});    
+    }
+    const result = await Result.getResultsByStudentId(student.matric);
+    if(result.length === 0) {
+        return res.status(404).json({success: false, code: 404, message: "No results uploaded yet"})
+    }
+    return res.status(200).json({success: true, code: 200, result})
+    }
+    catch(error) {
+        console.log(error.message);
+        return res.status(500).json ({success: false, code: 500, message: error.message})
+    }
+    
+
+}
