@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/results";
@@ -18,6 +17,14 @@ export const getResults= (semester, department, session, level) => axios.get(API
             }
         }
 );
+
+export const getResultsByDepartment = (departmentId) =>
+  axios.get(`${API_URL}/gpa/${departmentId}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
 
 export const addSchool = (data) => axios.post(API_URL, data);
 export const updateSchool = (id, data) => axios.put(`${API_URL}/${id}`, data);

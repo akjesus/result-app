@@ -236,7 +236,7 @@ exports.getResultsByStudent = async (req, res) => {
             [registration_number, session_id, semester_id, level_id]
         );
         if(results.length === 0) {
-            return res.status(200).json({ success: true, code: 404, message: `No results found for this semester and session yet` });
+            return res.status(200).json({ success: true, code: 404, message: `No results for this semester and session yet` });
         }
         return res.status(200).json({success: true, code: 200,results});
     } catch (err) {
@@ -251,7 +251,7 @@ exports.getResultsByDepartment = async (req, res) => {
         const [results] = await db.query(
             `SELECT  results.id, departments.name as department_name, courses.name AS course_name, 
             students.first_name, students.last_name, 
-                    students.registration_number, results.cat_score, results.exam_score,
+                    students.registration_number,    
                     results.cat_score + results.exam_score AS total_score, results.grade,
                     courses.credit_load
              FROM results
@@ -384,4 +384,53 @@ exports.getAllResultsForStudent = async (req, res) => {
     }
     
 
+}
+
+
+//get current GPA for a student
+exports.getCurrentGPA = async (req, res) => {
+    try {
+        const student = await Student.findById(req.user.id);    
+        if (!student) {
+            return res.status(404).json({ success: false, code: 404, message: 'Student not found' });
+        }
+        const gpa = await Result.calculateCurrentGPA(student.matric);
+        return res.status(200).json({ success: true, code: 200, gpa });
+    } catch (error) {
+        console.log('Error calculating current GPA:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+exports.getallGPAforDepartment = async (req, res) => {
+    try {
+        const departmentId = req.params.id;
+        const [gpas] = await db.query(
+            `SELECT 
+                students.registration_number as matric,
+                CONCAT(students.first_name, ' ', students.last_name) AS student_name,
+                departments.name AS department_name,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'code', courses.code,
+                        'name', courses.name,
+                        'grade', results.grade,
+                        'total_score', results.cat_score + results.exam_score,
+                        'credit_load', courses.credit_load
+                    )
+                ) AS courses_info
+            FROM students
+            JOIN departments ON students.department_id = departments.id
+            JOIN results ON students.registration_number = results.registration_number
+            JOIN courses ON results.course_id = courses.id
+            WHERE departments.id = ?
+            GROUP BY students.registration_number, students.first_name, students.last_name, departments.name
+            ORDER BY students.registration_number ASC`,
+            [departmentId]
+        );
+        return res.status(200).json({success: true, code: 200, gpas});
+    }
+    catch (err) {
+        return res.status(500).json({ success: false, code: 500, message: err.message });
+    }
 }

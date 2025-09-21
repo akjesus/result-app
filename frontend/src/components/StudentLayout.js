@@ -68,7 +68,13 @@ const StudentLayout = () => {
               }}
             >
               <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText
+                primary={item.text}
+                sx={{
+                  color: location.pathname === item.path ? "white" : undefined,
+                  fontWeight: location.pathname === item.path ? 700 : undefined,
+                }}
+              />
             </ListItem>
           ))}
         </List>

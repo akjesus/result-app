@@ -1,155 +1,143 @@
-import { Typography } from "@mui/material";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { useEffect, useState } from "react";
-import { getResults } from "../../api/results";
+import React, { useState, useEffect } from "react";
 import { getDepartments } from "../../api/departments";
-import { getSessions, getLevels } from "../../api/schools";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  IconButton,
+  TableContainer,
+  Paper,
+  TablePagination,
+  Tooltip,
+} from "@mui/material";
+import { Edit, Delete, Visibility } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 
-export default function AdminResults() {
-// Handler for blocking a result (placeholder)
-const handleBlockResult = (row) => {
-  toast.info(`Block result for ${row.first_name} ${row.last_name} (${row.course})`, {
-    position: "top-right",
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-  });
-  // TODO: Implement API call to block result
-};
-  // Fetch sessions from API
-  const [sessions, setSessions] = useState([]);
-  useEffect(() => {
-    getSessions()
-      .then(res => {
-        setSessions(res.data.sessions || [])
-      })
-      .catch(console.error);
-  }, []);
-  // Fetch departments from API
+export default function ResultManagement() {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [departments, setDepartments] = useState([]);
+  const navigate = useNavigate();
+
   useEffect(() => {
     getDepartments()
       .then(res => {
-        setDepartments(res.data.departments || [])
+        setDepartments(res.data.departments);
       })
-      .catch(console.error);
+      .catch(err => console.error(err));
   }, []);
-// This is a placeholder component for Results management
-const [levels, setLevels] =  useState([]);
-useEffect(() => {
-    getLevels()
-      .then(res => {
-        setLevels(res.data.levels || [])
-      })
-      .catch(console.error);
-  }, []);
-  // Form state
-  const [session, setSession] = useState("");
-  const [semester, setSemester] = useState("");
-  const [department, setDepartment] = useState("");
-  const [level, setLevel] = useState("");
-  const [results, setResults] = useState([]);
 
-
-// Handler to fetch results with selected filters
-const handleFetchResults = () => {
-  console.log(semester, department, session, level);
-  getResults(semester, department, session, level)
-    .then(res => {
-      setResults(res.data.results);
-      toast.success(`${res.data.message} `);
-    })
-    .catch(err => console.error(err));
-};
-  
+  const filteredDepartments = departments.filter(
+    (departments) =>
+      departments.name.toLowerCase().includes(search.toLowerCase())
+      || departments.school.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div>
-      <ToastContainer />
-      <Typography variant="h4" gutterBottom>
-        Results Management
+    <>
+    <ToastContainer />
+    <Box p={3}>
+      {/* Header */}
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78" }}>
+        Result Management
       </Typography>
 
-      {/* Form to set session, semester, department */}
-      <form style={{ margin: '24px 0' }} onSubmit={e => e.preventDefault()}>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ minWidth: 180 }}>
-            <label htmlFor="session" style={{ fontWeight: 500, marginBottom: 4, display: 'block' }}>Session:</label>
-            <select id="session" value={session} onChange={e => setSession(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc' }}>
-              <option value="">Select Session</option>
-              {sessions.map(ses => <option key={ses.id} value={ses.id}>{ses.name}</option>)}
-            </select>
-          </div>
-          <div style={{ minWidth: 180 }}>
-            <label htmlFor="semester" style={{ fontWeight: 500, marginBottom: 4, display: 'block' }}>Semester:</label>
-            <select id="semester" value={semester} onChange={e => setSemester(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc' }}>
-              <option value="">Select Semester</option>
-              <option key={1} value={1}>First </option>
-              <option key={2} value={2}>Second</option>
-            </select>
-          </div>
-          <div style={{ minWidth: 180 }}>
-            <label htmlFor="department" style={{ fontWeight: 500, marginBottom: 4, display: 'block' }}>Department:</label>
-            <select id="department" value={department} onChange={e => setDepartment(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc' }}>
-              <option value="">Select Department</option>
-              {departments.map(dep => <option key={dep.id} value={dep.id}>{dep.name}</option>)}
-            </select>
-          </div>
-          <div style={{ minWidth: 180 }}>
-            <label htmlFor="level" style={{ fontWeight: 500, marginBottom: 4, display: 'block' }}>Level:</label>
-            <select id="level" value={level} onChange={e => setLevel(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: 4, border: '1px solid #ccc' }}>
-              <option value="">Select Level</option>
-              {levels.map(lev => <option key={lev.id} value={lev.id}>{lev.name}</option>)}
-            </select>
-          </div>
-          <button type="button" onClick={handleFetchResults} style={{ padding: '8px 20px', borderRadius: 4, background: '#1976d2', color: '#fff', border: 'none', fontWeight: 500, cursor: 'pointer', minWidth: 120 }}>
-            Fetch Results
-          </button>
-        </div>
-      </form>
+      {/* Quick Navigation Buttons */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+        <Button
+          variant="contained"
+          sx={{ bgcolor: "#2C2C78" }}
+          onClick={() => navigate("/admin/results")}
+        >
+          Results
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/admin/probation")}>
+          Probation List
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/admin/settings")}>
+          Settings
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/admin/departments")}>
+          Departments
+        </Button>
+      </Box>
 
-      {/* Results Table: only show if results have been fetched and not empty */}
-      {results && results.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <Typography variant="h6" gutterBottom>Results Table</Typography>
-          <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
-            <thead>
-              <tr style={{ background: '#f5f5f5' }}>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Student Name</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Course</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Semester</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Session</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Department</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Level</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Total Score</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Grade</th>
-                <th style={{ padding: '8px', border: '1px solid #ddd' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((row, idx) => (
-                <tr key={idx}>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.student_name}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.course}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.semester}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.session}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.department}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.level}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.total_score}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>{row.grade}</td>
-                  <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                    <button onClick={() => handleBlockResult(row)} style={{ padding: '4px 12px', borderRadius: 4, background: '#d32f2f', color: '#fff', border: 'none', fontWeight: 500, cursor: 'pointer' }}>Block</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+      {/* Search */}
+      <TextField
+        label="Search by Department or Faculty"
+        variant="outlined"
+        size="small"
+        fullWidth
+        sx={{ mb: 2 }}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      {/* Departments & Faculties Table with Pagination */}
+      <Paper>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Faculties</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredDepartments
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((departments) => (
+                  <TableRow key={departments.id}>
+                    <TableCell>{departments.name}</TableCell>
+                    <TableCell>{departments.school}</TableCell>
+                    <TableCell>
+                      <Tooltip title="View">
+                        <IconButton
+                          color="secondary"
+                          onClick={() => navigate(`/admin/results/${departments.id}`)}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton color="primary">
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton color="error">
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component="div"
+          count={filteredDepartments.length}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[5, 10, 25]}
+        />
+      </Paper>
+    </Box>
+    </>
   );
 }

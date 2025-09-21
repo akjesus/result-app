@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { getDepartments, addDepartment, updateDepartment, deleteDepartment } from "../../api/departments";
 import { getSchools } from "../../api/schools";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import {
   Box,
   Button,
@@ -52,7 +55,10 @@ export default function DepartmentsPage() {
 
   function fetchDepartments() {
     getDepartments()
-      .then(res => setDepartments(res.data.departments))
+      .then(res => {
+        toast.success("Departments Fetched!");
+        setDepartments(res.data.departments)
+      })
       .catch(err => console.error(err));
   }
 
@@ -123,6 +129,8 @@ export default function DepartmentsPage() {
   const pageCount = Math.ceil(filtered.length / rowsPerPage);
 
   return (
+    <>
+    <ToastContainer />
     <Box sx={{ p: 4 }}>
       <Typography variant="h4" sx={{ mb: 3 }}><strong>Departments</strong></Typography>
 
@@ -232,5 +240,6 @@ export default function DepartmentsPage() {
         </Alert>
       </Snackbar>
     </Box>
+    </>
   );
 }

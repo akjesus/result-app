@@ -290,5 +290,122 @@ class Result {
     return rows.length ? rows[0].average_cgpa : null;
   }
   
+  static async calculateCurrentGPA(registration_number, semester_id) {
+    // Calculate CGPA (all semesters)
+    const [cgpaRows] = await db.query(`
+      SELECT
+        (SUM(
+          CASE grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS cgpa
+      FROM results r
+      JOIN courses c ON r.course_id = c.id
+      WHERE r.registration_number = ?
+    `, [registration_number]);
+    const cgpa = cgpaRows.length ? cgpaRows[0].cgpa : null;
+    let semesterToUse = semester_id;
+    // If semester_id is not provided, select the active semester
+    if (!semester_id) {
+      const [activeRows] = await db.query(`SELECT id FROM semesters WHERE active = 1 LIMIT 1`);
+      if (activeRows.length) {
+        semesterToUse = activeRows[0].id;
+      } else {
+        // fallback: use latest semester
+        const [latestRows] = await db.query(`SELECT id FROM semesters ORDER BY id DESC LIMIT 1`);
+        semesterToUse = latestRows.length ? latestRows[0].id : null;
+      }
+    }
+    if (!semesterToUse) return null;
+
+    // Calculate GPA and course stats for current semester
+    const [rows] = await db.query(`
+      SELECT
+        r.registration_number,  
+        SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) AS total_quality_points,
+        SUM(c.credit_load) AS total_credit_hours,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS gpa
+      FROM results r
+      JOIN courses c ON r.course_id = c.id
+      WHERE r.registration_number = ? AND r.semester_id = ?
+      GROUP BY r.registration_number
+    `, [registration_number, semesterToUse]);
+
+    // Get total courses taken (all semesters) and failed (current semester)
+    const [allCoursesRows] = await db.query(`
+      SELECT grade FROM results WHERE registration_number = ?
+    `, [registration_number]);
+    const totalCourses = allCoursesRows.length;
+
+    const [failedCoursesRows] = await db.query(`
+      SELECT grade FROM results WHERE registration_number = ? AND semester_id = ? AND grade = 'F'
+    `, [registration_number, semesterToUse]);
+    const totalFailed = failedCoursesRows.length;
+
+    // Performance summary by semester (all semesters)
+    const [performanceRows] = await db.query(`
+      SELECT s.name AS semester, r.semester_id, c.level_id,
+        (SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) / SUM(c.credit_load)) AS gpa
+      FROM results r
+      JOIN courses c ON r.course_id = c.id
+      JOIN semesters s ON r.semester_id = s.id
+      JOIN levels l ON c.level_id = l.id
+      WHERE r.registration_number = ?
+      GROUP BY r.semester_id, s.name, c.level_id
+      ORDER BY r.semester_id ASC
+    `, [registration_number]);
+
+    if (rows.length) {
+      return {
+        ...rows[0],
+        total_courses: totalCourses,
+        total_failed: totalFailed,
+        cgpa,
+        performance: performanceRows.map(row => ({
+          semester: row.semester,
+          semester_id: row.semester_id,
+          level_id: row.level_id,
+          gpa: row.gpa
+        }))
+      };
+    }
+    return null;
+  }
 }
 module.exports = Result;

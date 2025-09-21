@@ -47,7 +47,6 @@ export default function AdminCourses() {
     getDepartments()
       .then(res => {
         setDepartments(res.data.departments || []);
-        toast.success("Departments Fetched!");
       })
       .catch(console.error);
   }, []);
@@ -55,10 +54,8 @@ export default function AdminCourses() {
   useEffect(() => {
     getCourses()
       .then((res) => {
-        console.log(res.data.courses)
-        toast.success("All Courses Fetched!")
+        toast.success("Courses and Departments Fetched!")
         setCourses(res.data.courses || [])}
-
     )
       .catch(console.error);
   }, []);
@@ -162,6 +159,8 @@ export default function AdminCourses() {
   };
 
   return (
+    <>
+    <ToastContainer />
     <Box>
       <Typography variant="h5" gutterBottom>
         Manage Courses
@@ -324,5 +323,6 @@ export default function AdminCourses() {
         </DialogActions>
       </Dialog>
     </Box>
+    </>
   );
 }

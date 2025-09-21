@@ -13,12 +13,11 @@ exports.login = async (req, res) => {
   let user;
     try {
       const { email, password } = req.body;
+      console.log(req.body)
       if (!email || !password) {
         return res.status(400).json({ success: false, code: 400, message: "Email and password are required" });
       }
-      user = await Staff.findByUsername(email);
-      if (!user) {
-        user = await Student.findByUsername(email);
+      user = await Staff.findByUsername(email) || await Student.findByUsername(email);
         if (!user) {
         return res.status(401).json({ success: false, code: 401, message: "Invalid Username" });
           }
@@ -32,7 +31,6 @@ exports.login = async (req, res) => {
         if (!rawPassword) {
         return res.status(401).json({ success: false, code: 401, message: "Invalid Password" });
         }}
-      }
       // Generate JWT token
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
       res.status(200).json({ success: true, code: 200, role:user.role, message: "Login successful", token });

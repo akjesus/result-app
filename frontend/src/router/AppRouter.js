@@ -13,6 +13,9 @@ import AdminResults from "../pages/Admin/Results";
 import AdminGrades from "../pages/Admin/Grades";
 import AdminSettings from "../pages/Admin/Settings";
 import AdminLayout from "../components/AdminLayout";
+import Probation from "../pages/Admin/Probation";
+import ResultUploadPage from "../pages/Admin/ResultUploadPage";
+import DepartmentResults from "../pages/Admin/DepartmentResults";
 
 // Student Pages
 import StudentDashboard from "../pages/Student/Dashboard";
@@ -46,6 +49,9 @@ const AppRouter = () => (
         <Route path="results" element={<AdminResults />} />
         <Route path="grades" element={<AdminGrades />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="probation" element={<Probation />} />
+        <Route path="/admin/results/:departmentId" element={<ResultUploadPage />} />
+        <Route path="results/:id" element={<ResultUploadPage />} />
       </Route>
 
       {/* Student Routes (protected + wrapped in StudentLayout) */}
@@ -61,6 +67,7 @@ const AppRouter = () => (
         <Route path="profile" element={<Profile />} />
         <Route path="results" element={<Results />} />
          <Route path="settings" element={<Settings />} />
+  "
       </Route>
     </Routes>
   </BrowserRouter>

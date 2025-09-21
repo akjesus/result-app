@@ -78,10 +78,15 @@ const AdminLayout = () => {
                   location.pathname === item.path ? "#2C2C78" : "transparent",
                 "&:hover": { backgroundColor: "#4682B4" },
               }}
-            >
-              <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItem>
+            ><ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
+                          <ListItemText
+                            primary={item.text}
+                            sx={{
+                              color: location.pathname === item.path ? "white" : undefined,
+                              fontWeight: location.pathname === item.path ? 700 : undefined,
+                            }}
+                          />
+                        </ListItem>
           ))}
         </List>
 

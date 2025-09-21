@@ -64,3 +64,11 @@ export const changePassword = (data) => axios.post('http://localhost:5000/api/st
         }
 );
 
+
+export const getCurrentGPA = () => axios.get('http://localhost:5000/api/students/gpa',
+        {   headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        }
+);
