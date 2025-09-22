@@ -14,10 +14,10 @@ exports.getDashboardData = async (req, res) => {
       totalStudents: studentCountResult[0].studentCount,
       totalCourses: courseCountResult[0].courseCount,
       totalDepartments: departmentCountResult[0].departmentCount,
-      highestCGPA: highestCGPA ? highestCGPA.cgpa : null,
-      highestGPA: highestCGPA ? highestCGPA.cgpa : null,
-      lowestCGPA: lowestCGPA ? lowestCGPA.cgpa : null,
-      lowestGPA: lowestCGPA ? lowestCGPA.cgpa : null,
+      highestCGPA: highestCGPA ? parseFloat(highestCGPA.cgpa) : null,
+      highestGPA: highestCGPA ? parseFloat(highestCGPA.cgpa) : null,
+      lowestCGPA: lowestCGPA ? parseFloat(lowestCGPA.cgpa) : null,
+      lowestGPA: lowestCGPA ? parseFloat(lowestCGPA.cgpa) : null,
       avgCGPA: avgCGPA ? parseFloat(avgCGPA) : null,
     }
     return res.status(200).json({ success: true, code: 200, dashboardData });

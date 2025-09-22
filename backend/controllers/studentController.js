@@ -14,7 +14,7 @@ exports.getAllStudents = async (req, res) => {
   const level = parseInt(req.query.level) || null;
   try {
     const offset = (page - 1) * limit;
-    let query = `SELECT  concat(first_name, ' ', last_name) AS fullName, 
+    let query = `SELECT  first_name, last_name, 
     email, registration_number as matric, username,
     departments.name AS department, levels.name AS level,
     faculties.name AS school 

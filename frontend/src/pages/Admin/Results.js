@@ -18,13 +18,16 @@ import {
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import UploadResultsModal from "./UploadResultsModal";
 
 export default function ResultManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [departments, setDepartments] = useState([]);
+  const [openUploadModal, setOpenUploadModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,7 +52,6 @@ export default function ResultManagement() {
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78" }}>
         Result Management
       </Typography>
-
       {/* Quick Navigation Buttons */}
       <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
         <Button
@@ -67,6 +69,9 @@ export default function ResultManagement() {
         </Button>
         <Button variant="outlined" onClick={() => navigate("/admin/departments")}>
           Departments
+        </Button>
+        <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={() => setOpenUploadModal(true)}>
+          Upload Results (CSV)
         </Button>
       </Box>
 
@@ -137,6 +142,8 @@ export default function ResultManagement() {
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Paper>
+      {/* Upload Results Modal */}
+      <UploadResultsModal open={openUploadModal} handleClose={() => setOpenUploadModal(false)} />
     </Box>
     </>
   );

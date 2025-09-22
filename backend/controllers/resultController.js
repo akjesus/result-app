@@ -1,6 +1,7 @@
 const Result = require("../models/resultModel");
 const db = require("../config/database");
 const Student = require("../models/studentModel");
+const Course = require("../models/courseModel");
 
 // Get all results with pagination
 exports.getAllResults = async (req, res) => {
@@ -142,23 +143,24 @@ exports.deleteResult = async (req, res) => {
 
 //bulk upload results
 exports.bulkUploadResults = async (req, res) => {
-    const courseId = parseInt(req.params.id);
-    console.log("Uploading results for course ID:", courseId);
+    try {
     if (!req.files || !req.files.file) {
         return res.status(400).json({ success: false, code: 400, message: "No file uploaded!" });
     }
-    
-    console.log("Uploaded files:", req.files);
     const resultsFile = req.files.file;
-    const {session_id, semester_id} = req.body;
+    const {session_id, course_id, semester_id} = req.body;
     if(!session_id || !semester_id) {
         return res.status(400).json({ success: false, code: 400, message: "Session ID and Semester ID are required!" });
+    }
+    const course = await Course.findById(course_id);
+    if(!course || course.length === 0) {
+        return res.status(400).json({ success: false, code: 400, message: "Invalid Course ID!" });  
     }
     const fileExtension = resultsFile.name.split('.').pop().toLowerCase();
     if (fileExtension !== 'csv') {
         return res.status(400).json({ success: false, code: 400, message: "Only CSV files are allowed!" });
     }
-    try {
+    
         const csv = require('csv-parser');
         const stream = require('stream');
         const results = [];
@@ -172,22 +174,29 @@ exports.bulkUploadResults = async (req, res) => {
             // Validate and transform data
             let insertedCount = 0;
             for (const r of results) {
+
                 const registration_number = r.registration_number;
                 // Check for duplicate
-                const [existing] = await Result.findByStudentAndCourse(registration_number, courseId);
+                const [existing] = await Result.findByStudentAndCourse(registration_number, course_id);
                 if (existing && existing.length > 0) {
                     continue; // Skip duplicate
                 }
                 // Insert unique result
-                await Result.createResult(
+                try {
+                        await Result.createResult(
                     registration_number,
-                    courseId,
+                    course_id,
                     parseFloat(r.cat_score),
                     parseFloat(r.exam_score),
-                    semester_id,
                     session_id,
+                    semester_id
                 );
                 insertedCount++;
+                }
+                catch(error){
+                    return res.status(500).json({success: false, code: 500, message: error.message})
+                }
+                
             }
             return res.status(200).json({success: true, code: 200, message: `${insertedCount} results uploaded successfully (duplicates skipped)` });
         })
@@ -212,10 +221,7 @@ exports.getResultsByStudent = async (req, res) => {
     try {
         // Destructure from query
         const { session, level, semester } = req.query;
-        const session_id = session;
-        const level_id = level;
-        const semester_id = semester;
-        if (!session_id || !level_id || !semester_id) {
+        if (!session || !level || !semester) {
             return res.status(400).json({ success: false, code: 400, message: "Semester, Session and Levels are required!" });
         }
         const [results] = await db.query(
@@ -233,7 +239,7 @@ exports.getResultsByStudent = async (req, res) => {
             AND results.semester_id = ?
             AND students.level_id = ? 
             AND results.blocked = 0 `,
-            [registration_number, session_id, semester_id, level_id]
+            [registration_number, session, semester, level]
         );
         if(results.length === 0) {
             return res.status(200).json({ success: true, code: 404, message: `No results for this semester and session yet` });
@@ -394,7 +400,12 @@ exports.getCurrentGPA = async (req, res) => {
         if (!student) {
             return res.status(404).json({ success: false, code: 404, message: 'Student not found' });
         }
-        const gpa = await Result.calculateCurrentGPA(student.matric);
+        const [currentSemester] = await db.query(`
+            SELECT id from semesters 
+            where active = 1 
+            AND session_id = 
+            ( select id from sessions where active = 1);`);
+        const gpa = await Result.calculateCurrentGPA(student.matric, currentSemester[0].id);
         return res.status(200).json({ success: true, code: 200, gpa });
     } catch (error) {
         console.log('Error calculating current GPA:', error.message);

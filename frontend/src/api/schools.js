@@ -37,6 +37,39 @@ export const getLevels = () => axios.get("http://localhost:5000/api/schools/leve
           }
 });
 
+export const createCourse = (data) => axios.post("http://localhost:5000/api/courses", 
+    { 
+        name: data.title,
+        code: data.code, 
+        department_id: data.department, 
+        level_id: data.level,
+        semester_id: data.semester,
+        credit_load: data.credit,
+        active: data.active,
+     }
+        , 
+        { headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+export const updateCourse = (data) => axios.put("http://localhost:5000/api/courses", 
+    { 
+        name: data.title,
+        code: data.code, 
+        department_id: data.department, 
+        level_id: data.level,
+        semester_id: data.semester,
+        credit_load: data.credit,
+        active: data.active,
+     }
+        , 
+        { headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
 
 export const addSchool = (data) => axios.post(API_URL, data);
 export const updateSchool = (id, data) => axios.put(`${API_URL}/${id}`, data);

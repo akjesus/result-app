@@ -89,7 +89,9 @@ export default function AdminStudents() {
         setStudents(res.data.students || []);
         toast.success(`Students fetched `);  
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        console.log(error)
+        toast.error(error.response.data.message || error);});
   }, []);
 
   const [schools, setSchools] = useState([]);
@@ -164,7 +166,8 @@ export default function AdminStudents() {
   // Filtered students
   const filteredStudents = students.filter(
     (s) =>
-      s.fullName.toLowerCase().includes(search.toLowerCase()) &&
+      s.first_name.toLowerCase().includes(search.toLowerCase()) ||
+      s.last_name.toLowerCase().includes(search.toLowerCase()) &&
       (filterDept ? s.department === filterDept : true) &&
       (filterLevel ? s.level === filterLevel : true)
   );
@@ -193,7 +196,7 @@ export default function AdminStudents() {
           value={filterDept}
           onChange={(e) => setFilterDept(e.target.value)}
           size="small"
-          sx={{ minWidth: 180 }}
+          sx={{ minWidth: 280 }}
         >
           <MenuItem value="">All</MenuItem>
           {departments.map((d) => (<MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>))}
@@ -204,7 +207,7 @@ export default function AdminStudents() {
           value={filterLevel}
           onChange={(e) => setFilterLevel(e.target.value)}
           size="small"
-          sx={{ minWidth: 120 }}
+          sx={{ minWidth: 220 }}
         >
           <MenuItem value="">All</MenuItem>
           {levels.map((l) => (<MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>))}
@@ -215,7 +218,8 @@ export default function AdminStudents() {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Full Name</TableCell>
+            <TableCell>First Name</TableCell>
+            <TableCell>Last Name</TableCell>
             <TableCell>Matric Number</TableCell>
             <TableCell>School</TableCell>
             <TableCell>Department</TableCell>
@@ -227,7 +231,8 @@ export default function AdminStudents() {
         <TableBody>
           {filteredStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((student, index) => (
             <TableRow key={index}>
-              <TableCell>{student.fullName}</TableCell>
+              <TableCell>{student.first_name}</TableCell>
+              <TableCell>{student.last_name}</TableCell>
               <TableCell>{student.matric}</TableCell>
               <TableCell>{student.school}</TableCell>
               <TableCell>{student.department}</TableCell>
@@ -255,8 +260,8 @@ export default function AdminStudents() {
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editIndex !== null ? "Edit Student" : "Add Student"}</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="First Name" name="firstName" fullWidth value={newStudent.firstName} onChange={handleChange} />
-          <TextField margin="dense" label="Last Name" name="lastName" fullWidth value={newStudent.lastName} onChange={handleChange} />
+          <TextField margin="dense" label="First Name" name="first_name" fullWidth value={newStudent.first_name} onChange={handleChange} />
+          <TextField margin="dense" label="Last Name" name="last_name" fullWidth value={newStudent.last_name} onChange={handleChange} />
           <TextField margin="dense" label="Matric Number" name="matric" fullWidth value={newStudent.matric} onChange={handleChange} />
 
           <FormControl fullWidth margin="dense">

@@ -13,7 +13,6 @@ exports.login = async (req, res) => {
   let user;
     try {
       const { email, password } = req.body;
-      console.log(req.body)
       if (!email || !password) {
         return res.status(400).json({ success: false, code: 400, message: "Email and password are required" });
       }
@@ -40,6 +39,32 @@ exports.login = async (req, res) => {
       res.status(500).json({ success: false, code: 500, message: err.message });
     }
   };
+
+  //create admin 
+exports.createAdmin = async (req, res) => {
+    try {
+      const { first_name, last_name, email, username, password } = req.body;
+      if (!first_name || !last_name || !email || !username || !password) {
+        return res.status(400).json({ success: false, code: 400, message: "All fields are required" });
+      }
+      const existingUser = await Staff.findByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ success: false, code: 409, message: "Username already exists" });
+      }
+      const newAdminId = await Staff.createStaff(first_name, last_name, email, username, password); 
+      if (!newAdminId) {
+        return res.status(500).json({ success: false, code: 500, message: "Failed to create admin" });
+      }
+      res.status(201).json({ success: true, code: 201, message: "Admin created successfully", adminId: newAdminId });
+    } catch (err) {
+      console.error("Error creating admin:", err);
+      res.status(500).json({ success: false, code: 500, message: err.message });
+    }
+  };
+
+//make staff admin
+
+
 
 exports.studentLogin = async (req, res) => {
     try {

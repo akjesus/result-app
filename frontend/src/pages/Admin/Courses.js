@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { getCourses } from "../../api/schools";
+import { getCourses, createCourse, getLevels, updateCourse } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -33,19 +33,44 @@ import { Edit, Delete } from "@mui/icons-material";
 
 // ✅ Departments List
 
-
-
-
-const levels = ["100", "200", "300", "400", "500", "600"];
-
 export default function AdminCourses() {
+  // Handle submit for creating a course
+  const handleSubmitCourse = async () => {
+    try {
+      const payload = {
+        code: newCourse.code,
+        title: newCourse.title,
+        department: newCourse.department,
+        level: newCourse.level,
+        credit: newCourse.credit,
+        active: newCourse.active,
+        semester: newCourse.semester,
+      };
+      console.log(payload);
+      const res = await createCourse(payload);
+      if (res.data.success) {
+        toast.success("Course created successfully!");
+        handleClose();
+      } else {
+        toast.error(res.data.message || "Failed to create course");
+      }
+      // Optionally refresh courses list here
+    } catch (err) {
+      console.log(err);
+      toast.error(err.response?.data?.message || "Failed to create course");
+      handleClose();
+    }
+  };
+  // Search state
+  const [search, setSearch] = useState("");
   // State for courses and departments
   const [courses, setCourses] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [levels, setLevels] = useState([]);
   // Fetch departments from API
   useEffect(() => {
     getDepartments()
-      .then(res => {
+      .then((res) => {
         setDepartments(res.data.departments || []);
       })
       .catch(console.error);
@@ -54,9 +79,18 @@ export default function AdminCourses() {
   useEffect(() => {
     getCourses()
       .then((res) => {
-        toast.success("Courses and Departments Fetched!")
-        setCourses(res.data.courses || [])}
-    )
+        toast.success("Courses and Departments Fetched!");
+        setCourses(res.data.courses || []);
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    getLevels()
+      .then((res) => {
+        toast.success("Levels Fetched!");
+        setLevels(res.data.levels || []);
+      })
       .catch(console.error);
   }, []);
 
@@ -65,8 +99,8 @@ export default function AdminCourses() {
   const [newCourse, setNewCourse] = useState({
     code: "",
     title: "",
-    departments: [],
-    levels: [],
+    department: "",
+    level: "",
     credit: "",
     active: "",
   });
@@ -78,14 +112,23 @@ export default function AdminCourses() {
   // Open modal for Add/Edit
   const handleOpen = (course = null, index = null) => {
     if (course) {
-      setNewCourse(course);
+      setNewCourse({
+        code: course.code || "",
+        title: course.title || "",
+        department: course.department || "",
+        level: course.level || "",
+        semester: course.semester || "",
+        credit: course.credit || "",
+        active: course.active || "",
+      });
       setEditIndex(index);
     } else {
       setNewCourse({
         code: "",
         title: "",
-        departments: [],
-        levels: [],
+        department: "",
+        level: "",
+        semester: "",
         credit: "",
         active: "",
       });
@@ -102,33 +145,11 @@ export default function AdminCourses() {
 
   // ✅ Handle Department with "All" toggle
   const handleDepartmentChange = (event) => {
-    const value = event.target.value;
-    if (value.includes("All")) {
-      if (newCourse.departments.length === departments.length) {
-        setNewCourse({ ...newCourse, departments: [] });
-      } else {
-        setNewCourse({ ...newCourse, departments: [...departments.map(dep => dep.name)] });
-      }
-    } else {
-      setNewCourse({ ...newCourse, departments: value });
-    }
+    setNewCourse({ ...newCourse, department: event.target.value });
   };
-
   // ✅ Handle Level with "All" toggle
   const handleLevelChange = (event) => {
-    const value = event.target.value;
-
-    if (value.includes("All")) {
-      if (newCourse.levels.length === levels.length) {
-        // Unselect all
-        setNewCourse({ ...newCourse, levels: [] });
-      } else {
-        // Select all
-        setNewCourse({ ...newCourse, levels: [...levels] });
-      }
-    } else {
-      setNewCourse({ ...newCourse, levels: value });
-    }
+    setNewCourse({ ...newCourse, level: event.target.value });
   };
 
   // Add or Update Course
@@ -138,7 +159,7 @@ export default function AdminCourses() {
       updated[editIndex] = newCourse;
       setCourses(updated);
     } else {
-      setCourses([...courses, newCourse]);
+      handleSubmitCourse();
     }
     handleClose();
   };
@@ -160,169 +181,199 @@ export default function AdminCourses() {
 
   return (
     <>
-    <ToastContainer />
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Manage Courses
-      </Typography>
+      <ToastContainer />
+      <Box>
+        <Typography variant="h5" gutterBottom>
+          Manage Courses
+        </Typography>
 
-      {/* Add Course Button */}
-      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        <Button
-          variant="contained"
-          sx={{ bgcolor: "#2C2C78", ":hover": { bgcolor: "#1f1f5c" } }}
-          onClick={() => handleOpen()}
-        >
-          Add Course
-        </Button>
-      </Box>
-
-      {/* Courses Table */}
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: "bold" }}>Course Code</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Course Title</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Levels</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Credit</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>active</TableCell>
-            <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {courses
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map((course, index) => (
-              <TableRow key={index}>
-                <TableCell>{course.code}</TableCell>
-                <TableCell>{course.title}</TableCell>
-                <TableCell>{course.departments}</TableCell>
-                <TableCell>{course.level}</TableCell>
-                <TableCell>{course.credit}</TableCell>
-                <TableCell>{course.active}</TableCell>
-                <TableCell>
-                  <IconButton color="primary" onClick={() => handleOpen(course, index)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(index)}>
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
-
-      {/* Pagination */}
-      <TablePagination
-        component="div"
-        count={courses.length}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
-
-      {/* Add/Edit Course Modal */}
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>{editIndex !== null ? "Edit Course" : "Add Course"}</DialogTitle>
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Course Code"
-            name="code"
-            fullWidth
-            value={newCourse.code}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            label="Course Title"
-            name="title"
-            fullWidth
-            value={newCourse.title}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            label="Credit"
-            name="credit"
-            type="number"
-            fullWidth
-            value={newCourse.credit}
-            onChange={handleChange}
-          />
-
-          {/* ✅ Department Multi-Select Dropdown */}
-<FormControl sx={{ mt: 2, width: "50%" }}>
-             <InputLabel>Departments</InputLabel>
-             <Select
-               multiple
-               value={newCourse.departments}
-               onChange={handleDepartmentChange}
-               input={<OutlinedInput label="Departments" />}
-               renderValue={(selected) => selected.join(", ")}
-             >
-               <MenuItem value="All">
-                 <Checkbox checked={newCourse.departments.length === departments.length} />
-                 <ListItemText primary="All" />
-               </MenuItem>
-               {departments.map((dept) => (
-                 <MenuItem key={dept.id} value={dept.name}>
-                   <Checkbox checked={newCourse.departments.includes(dept.name)} />
-                   <ListItemText primary={dept.name} />
-                 </MenuItem>
-               ))}
-             </Select>
-</FormControl>
-
-{/* ✅ Level Multi-Select Dropdown */}
-<FormControl sx={{ mt: 2, width: "50%" }}>
-  <InputLabel>Levels</InputLabel>
-  <Select
-    multiple
-    value={newCourse.levels}
-    onChange={handleLevelChange}
-    input={<OutlinedInput label="Levels" />}
-    renderValue={(selected) => selected.join(", ")}
-  >
-    <MenuItem value="All">
-      <Checkbox checked={newCourse.levels.length === levels.length} />
-      <ListItemText primary="All" />
-    </MenuItem>
-    {levels.map((lvl) => (
-      <MenuItem key={lvl} value={lvl}>
-        <Checkbox checked={newCourse.levels.includes(lvl)} />
-        <ListItemText primary={lvl} />
-      </MenuItem>
-    ))}
-  </Select>
-</FormControl>
-
-          {/* ✅ active (Text) */}
-          <TextField
-            margin="dense"
-            label="active"
-            name="active"
-            fullWidth
-            value={newCourse.active}
-            onChange={handleChange}
-            sx={{ mt: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+        {/* Add Course Button & Search Box */}
+        <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
           <Button
             variant="contained"
-            sx={{ bgcolor: "#2C2C78" }}
-            onClick={handleSaveCourse}
+            sx={{ bgcolor: "#2C2C78", ":hover": { bgcolor: "#1f1f5c" } }}
+            onClick={() => handleOpen()}
           >
-            Save
+            Add Course
           </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+          <TextField
+            label="Search Courses"
+            variant="outlined"
+            size="small"
+            sx={{ minWidth: 250 }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </Box>
+
+        {/* Courses Table */}
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: "bold" }}>Course Code</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Course Title</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Levels</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Credit</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>active</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {courses
+              .filter(
+                (course) =>
+                  course.code.toLowerCase().includes(search.toLowerCase()) ||
+                  course.title.toLowerCase().includes(search.toLowerCase())
+              )
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((course, index) => (
+                <TableRow key={index}>
+                  <TableCell>{course.code}</TableCell>
+                  <TableCell>{course.title}</TableCell>
+                  <TableCell>{course.departments}</TableCell>
+                  <TableCell>{course.level}</TableCell>
+                  <TableCell>{course.credit}</TableCell>
+                  <TableCell>{course.active}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpen(course, index)}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(index)}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        <TablePagination
+          component="div"
+          count={courses.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+
+        {/* Add/Edit Course Modal */}
+        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+          <DialogTitle>
+            {editIndex !== null ? "Edit Course" : "Add Course"}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              margin="dense"
+              label="Course Code"
+              name="code"
+              sx={{ width: "95%", mr: 2 }}
+              value={newCourse.code}
+              onChange={handleChange}
+            />
+            <TextField
+              margin="dense"
+              label="Course Title"
+              name="title"
+              sx={{ width: "95%", mr: 2 }}
+              value={newCourse.title}
+              onChange={handleChange}
+            />
+            <TextField
+              margin="dense"
+              label="Credit"
+              name="credit"
+              type="number"
+              sx={{ width: 250, mr: 2 }}
+              value={newCourse.credit}
+              onChange={handleChange}
+            />
+            {/* ✅ active (Text) */}
+            <TextField
+              select
+              margin="dense"
+              label="Active"
+              name="active"
+              sx={{ width: 250, mr: 2 }}
+              value={newCourse.active}
+              onChange={handleChange}
+            >
+              <MenuItem value="1">Yes</MenuItem>
+              <MenuItem value="2">No</MenuItem>
+            </TextField>
+            <TextField
+              select
+              margin="dense"
+              label="Semester"
+              name="semester"
+              sx={{ width: 250, mr: 2 }}
+              value={newCourse.semester}
+              onChange={handleChange}
+            >
+              <MenuItem value="1">First Semester</MenuItem>
+              <MenuItem value="2">Second Semester</MenuItem>
+            </TextField>
+
+            {/* ✅ Department Multi-Select Dropdown */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                gap: 2,
+                mt: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <FormControl sx={{ width: 390 }}>
+                <InputLabel>Department</InputLabel>
+                <Select
+                  value={newCourse.department}
+                  onChange={handleDepartmentChange}
+                  label="Department"
+                >
+                  {departments.map((dept) => (
+                    <MenuItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl sx={{ width: 390 }}>
+                <InputLabel>Level</InputLabel>
+                <Select
+                  value={newCourse.level}
+                  onChange={handleLevelChange}
+                  label="Level"
+                >
+                  {levels.map((lvl) => (
+                    <MenuItem key={lvl.id || lvl} value={lvl.id || lvl}>
+                      {lvl.name || lvl}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button
+              variant="contained"
+              sx={{ bgcolor: "#2C2C78" }}
+              onClick={handleSaveCourse}
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </>
   );
 }

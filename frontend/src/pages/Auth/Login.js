@@ -32,9 +32,7 @@ function Login() {
       const res = await axios.post("http://localhost:5000/api/auth/login", {
        email, password
       });
-      if (res.data.success) {
-        console.log(res.data)
-        
+      if (res.data.success) {    
         // Save token & role in localStorage/session
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("role", res.data.role);

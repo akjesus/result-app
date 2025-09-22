@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { getSchools, addSchool, updateSchool, deleteSchool } from "../../api/schools";
 import {
   Box,
@@ -47,10 +49,14 @@ export default function SchoolsPage() {
   const fetchSchools = () => {
     getSchools()
       .then(res => {
-        console.log(res.data.schools)
         setSchools(res.data.schools)
+        toast.success("Schools Fetched!")
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        toast.error(err.response?.data?.message || "Failed to fetch schools");
+      });
+
   };
 
   const onSubmit = (data) => {
@@ -107,6 +113,8 @@ export default function SchoolsPage() {
   const pageCount = Math.ceil(filtered.length / rowsPerPage);
 
   return (
+    <>
+    <ToastContainer />
     <Box sx={{ p: 4 }}>
       <Typography variant="h4" sx={{ mb: 3 }}>Schools / Faculties</Typography>
 
@@ -205,5 +213,6 @@ export default function SchoolsPage() {
         </Alert>
       </Snackbar>
     </Box>
+      </>
   );
 }

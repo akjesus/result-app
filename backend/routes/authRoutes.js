@@ -6,6 +6,7 @@ const verifyToken = require("../controllers/authController").verifyToken;
 
 
 router.post("/login", authController.login);
+router.post("/create-admin", authController.createAdmin);
 // Protect all routes after this middleware
 router.use(verifyToken); 
 router.post("/logout", authController.adminLogout);

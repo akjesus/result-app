@@ -18,6 +18,7 @@ import Papa from "papaparse";
 import TranscriptModal from "./TranscriptModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
 import { addTranscriptHeader, addTranscriptFooter } from "../../utils/pdfHeader";
 import { getResultsByDepartment } from "../../api/results";
 
@@ -149,12 +150,16 @@ export default function ResultUploadPage() {
   // Download transcript PDF for a student
   const handleDownloadTranscript = (student) => {
     const doc = new jsPDF();
+    // Add logo and school name at the top
+    doc.addImage(logo, "PNG", 14, 10, 25, 25);
+    doc.setFontSize(18);
+    doc.text("Maduka University, Ekwegbe-Nsukka, Enugu State", 45, 25); // Replace with your school name
     doc.setFontSize(16);
-    doc.text("Student Transcript", 14, 20);
+    doc.text("Student Transcript", 14, 45);
     doc.setFontSize(12);
-    doc.text(`Name: ${student.student_name}`, 14, 35);
-    doc.text(`Matric No: ${student.matric}`, 14, 42);
-    doc.text(`Department: ${student.department_name}`, 14, 49);
+    doc.text(`Name: ${student.student_name}`, 14, 60);
+    doc.text(`Matric No: ${student.matric}`, 14, 67);
+    doc.text(`Department: ${student.department_name}`, 14, 74);
     const tableColumn = ["Course Code", "Course Name", "Credit", "Score", "Grade"];
     const tableRows = [];
     if (Array.isArray(student.courses_info)) {
@@ -169,7 +174,7 @@ export default function ResultUploadPage() {
       });
     }
     autoTable(doc, {
-      startY: 60,
+      startY: 85,
       head: [tableColumn],
       body: tableRows,
     });
@@ -193,9 +198,18 @@ export default function ResultUploadPage() {
       });
     }
     const gpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
-    doc.text(`Total Credits: ${totalCredits}`, 14, doc.lastAutoTable.finalY + 10);
-    doc.text(`Total Grade Points: ${totalGradePoints}`, 14, doc.lastAutoTable.finalY + 17);
-    doc.text(`GPA: ${gpa}`, 14, doc.lastAutoTable.finalY + 24);
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 120;
+    doc.text(`Total Credits: ${totalCredits}`, 14, finalY + 10);
+    doc.text(`Total Grade Points: ${totalGradePoints}`, 14, finalY + 17);
+    doc.text(`GPA: ${gpa}`, 14, finalY + 24);
+    // Registrar signature and date at the bottom of the page
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(12);
+    doc.text("Registrar's Signature:", 14, pageHeight - 30);
+    doc.line(60, pageHeight - 30, 120, pageHeight - 30); // Signature line
+    const today = new Date();
+    const dateStr = today.toLocaleDateString();
+    doc.text(`Date: ${dateStr}`, 14, pageHeight - 20);
     doc.save(`${student.matric}_transcript.pdf`);
   };
 
@@ -226,14 +240,6 @@ export default function ResultUploadPage() {
         Department Results: {students[0].department_name}
       </Typography>
       )}
-      {/* Upload Section */}
-      <Box sx={{ mt: 2 }}>
-        <Button variant="outlined" component="label">
-          Choose File (CSV)
-          <input type="file" hidden accept=".csv" onChange={handleFileUpload} />
-        </Button>
-        {file && <Typography variant="body2">Selected: {file.name}</Typography>}
-      </Box>
       <Box mt={2}>
         <TextField
           label="Search by Matric or Name"

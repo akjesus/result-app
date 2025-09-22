@@ -26,6 +26,11 @@ export const getResultsByDepartment = (departmentId) =>
     }
   });
 
-export const addSchool = (data) => axios.post(API_URL, data);
-export const updateSchool = (id, data) => axios.put(`${API_URL}/${id}`, data);
-export const deleteSchool = (id) => axios.delete(`${API_URL}/${id}`);
+
+export const bulkUploadResults = (formData) =>
+  axios.post(`${API_URL}/bulk-upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${token}`
+    }
+  });

@@ -14,7 +14,8 @@ import {
   Box,
 } from "@mui/material";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
+import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
 import { addTranscriptHeader } from "../../utils/pdfHeader"; // ✅ import helper
 
 export default function TranscriptModal({ open, handleClose, student }) {
@@ -22,37 +23,63 @@ export default function TranscriptModal({ open, handleClose, student }) {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-
-    addTranscriptHeader(doc); // ✅ use helper here
-
-    doc.setFontSize(11);
-    doc.text(`Name: ${student.name}`, 14, 105);
-    doc.text(`Matric No: ${student.matNo}`, 14, 112);
-    doc.text(`Faculty: ${student.faculty}`, 14, 119);
-    doc.text(`Department: ${student.department}`, 14, 126);
-    doc.text(`Level: ${student.level}`, 14, 133);
-    doc.text(`Session: ${student.session}`, 14, 140);
-
-    const tableColumn = ["S/N", "CODE", "COURSE TITLE", "UNIT", "SCORE", "GRADE", "GP"];
+    // Add logo and school name at the top
+    doc.addImage(logo, "PNG", 14, 10, 25, 25);
+    doc.setFontSize(18);
+    doc.text("Maduka University, Ekwegbe", 45, 25); // Replace with your school name
+    doc.setFontSize(16);
+    doc.text("Student Transcript", 14, 45);
+    doc.setFontSize(12);
+    doc.text(`Name: ${student.student_name}`, 14, 60);
+    doc.text(`Matric No: ${student.matric}`, 14, 67);
+    doc.text(`Department: ${student.department_name}`, 14, 74);
+    const tableColumn = ["Course Code", "Course Name", "Credit", "Score", "Grade"];
     const tableRows = [];
-
-    student.results.forEach((r, index) => {
-      tableRows.push([index + 1, r.code, r.title, r.unit, r.score, r.grade, r.gp]);
-    });
-
-    doc.autoTable({
-      startY: 150,
+    if (Array.isArray(student.courses_info)) {
+      student.courses_info.forEach(course => {
+        tableRows.push([
+          course.code,
+          course.name,
+          course.credit_load,
+          course.total_score,
+          course.grade
+        ]);
+      });
+    }
+    autoTable(doc, {
+      startY: 85,
       head: [tableColumn],
       body: tableRows,
     });
-
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.text(`Total Units: ${student.totalUnits}`, 14, finalY);
-    doc.text(`GPA: ${student.gpa}`, 14, finalY + 7);
-    doc.text(`CGPA: ${student.cgpa}`, 14, finalY + 14);
-    doc.text(`Comment: ${student.comment}`, 14, finalY + 21);
-
-    doc.save(`${student.matNo}_transcript.pdf`);
+    // GPA calculation
+    let totalCredits = 0;
+    let totalGradePoints = 0;
+    if (Array.isArray(student.courses_info)) {
+      student.courses_info.forEach(course => {
+        totalCredits += Number(course.credit_load);
+        let gp = 0;
+        switch (course.grade) {
+          case 'A': gp = 5; break;
+          case 'B': gp = 4; break;
+          case 'C': gp = 3; break;
+          case 'D': gp = 2; break;
+          case 'E': gp = 1; break;
+          case 'F': gp = 0; break;
+          default: gp = 0;
+        }
+        totalGradePoints += gp * Number(course.credit_load);
+      });
+    }
+    const gpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 120;
+    doc.text(`Total Credits: ${totalCredits}`, 14, finalY + 10);
+    doc.text(`Total Grade Points: ${totalGradePoints}`, 14, finalY + 17);
+    doc.text(`GPA: ${gpa}`, 14, finalY + 24);
+    // Registrar signature
+    doc.setFontSize(12);
+    doc.text("Registrar's Signature:", 14, finalY + 40);
+    doc.line(60, finalY + 40, 120, finalY + 40); // Signature line
+    doc.save(`${student.matric}_transcript.pdf`);
   };
 
   return (

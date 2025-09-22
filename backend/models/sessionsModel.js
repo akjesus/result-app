@@ -6,6 +6,13 @@ class Session {
             SELECT sessions.id as id, sessions.name as name, 
             IF(sessions.active, "true", "false") as active
             FROM sessions `);
+        // For each session, fetch semesters
+        for (let session of rows) {
+            const [semRows] = await db.query(`
+                SELECT id, name FROM semesters WHERE session_id = ?
+            `, [session.id]);
+            session.semesters = semRows;
+        }
         return rows;
     }
     static async findById(id) {

@@ -1,5 +1,8 @@
 import React from "react";
-import axios from "axios";
+import { getDashbaordStats } from "../../api/dashboard";
+import { useEffect, useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Grid,
   Card,
@@ -23,38 +26,35 @@ import {
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  // Mock stats data (replace with API later)
-  const stats = [
-    { key: "totalStudents", label: "Total Students", value: 1200, path: "/admin/students" },
-    { key: "totalCourses", label: "Total Courses", value: 85, path: "/admin/courses" },
-    { key: "totalDepartments", label: "Departments", value: 12, path: "/admin/departments" },
-    { key: "avgCGPA", label: "Average CGPA", value: 3.25 },
-    { key: "highestCGPA", label: "Highest CGPA", value: 4.9 },
-    { key: "highestGPA", label: "Highest GPA", value: 5.0 },
-    { key: "lowestCGPA", label: "Lowest CGPA", value: 1.5 },
-    { key: "lowestGPA", label: "Lowest GPA", value: 1.2 },
-  ];
+  // Stats state
+  const [stats, setStats] = useState([]);
+  useEffect(() => {
+    getDashbaordStats()
+      .then((res) => {
+        // Assuming API returns an object with keys matching the stat keys
+        const data = res.data.dashboardData;
+        toast.success("Dashboard stats fetched successfully");
+        // Map API response to stats array
+        const statsArr = [
+          { key: "totalStudents", label: "Total Students", value: data.totalStudents, path: "/admin/students" },
+          { key: "totalCourses", label: "Total Courses", value: data.totalCourses, path: "/admin/courses" },
+          { key: "totalDepartments", label: "Departments", value: data.totalDepartments, path: "/admin/departments" },
+          { key: "avgCGPA", label: "Average CGPA", value: data.avgCGPA.toFixed(2) },
+          { key: "highestCGPA", label: "Highest CGPA", value: data.highestCGPA.toFixed(2) },
+          { key: "highestGPA", label: "Highest GPA", value: data.highestGPA.toFixed(2) },
+          { key: "lowestCGPA", label: "Lowest CGPA", value: data.lowestCGPA.toFixed(2) },
+          { key: "lowestGPA", label: "Lowest GPA", value: data.lowestGPA.toFixed(2) },
+        ];
+        setStats(statsArr);
+      })
+      .catch((err) => {
+        console.log(err.response.data.message || err)
+        toast.error(err.response.data.message || "Failed to fetch dashboard stats");
+      });
+  }, []);
 
   //get data from API
-  const fetchDashboardData = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.get("http://localhost:5000/api/dashboard", 
-        {     
-          headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-        });
-        const data = await res.data.dashboardData
-        return data;
-    }
-    catch (error) {
-      console.log('Error fetching dashboard data:', error);
-    }
-  } 
-const statAPI = fetchDashboardData();
-console.log(statAPI);
+
   //
   // Mock data for departmental performance
   const deptPerformance = [
@@ -76,6 +76,8 @@ console.log(statAPI);
   const COLORS = ["#2C2C78", "#4682B4", "#87CEEB", "#B0C4DE"];
 
   return (
+    <>
+    <ToastContainer />
     <Box sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
         Admin Dashboard
@@ -153,5 +155,6 @@ console.log(statAPI);
         </Grid>
       </Grid>
     </Box>
+    </>
   );
 }

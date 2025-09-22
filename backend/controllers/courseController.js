@@ -12,7 +12,8 @@ exports.getAllCourses = async (req, res) => {
             FROM courses
             JOIN departments ON courses.department_id = departments.id
             JOIN levels ON courses.level_id = levels.id
-            JOIN semesters ON courses.semester_id = semesters.id`
+            JOIN semesters ON courses.semester_id = semesters.id
+            ORDER BY courses.code ASC`
     try {
         if(limit) query += " LIMIT ? OFFSET ?"
         const [courses] = await db.query(query, [limit, offset]);
@@ -58,7 +59,8 @@ exports.getCourseById = async (req, res) => {
 };
 // Create a new course
 exports.createCourse = async (req, res) => {
-    const { name,
+    const { 
+            name,
             code, 
             department_id, 
             level_id,

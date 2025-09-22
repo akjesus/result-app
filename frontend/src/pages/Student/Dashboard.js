@@ -5,8 +5,6 @@ import { getCurrentGPA } from "../../api/students";
 import { Grid, Card, CardContent, Typography, Box } from "@mui/material";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const mockData = {}
-// Data will be fetched from API
 
 const SummaryCard = ({ title, value }) => (
   <Card sx={{ bgcolor: "#2C2C78", color: "white", borderRadius: 3, textAlign: "center" }}>

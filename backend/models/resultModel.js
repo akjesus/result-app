@@ -22,21 +22,21 @@ class Result {
     return rows.length ? rows[0] : null;
   }
   
-  static async createResult(registration_number, course_id, cat_score, exam_score, semester_id, session_id) {
+  static async createResult(registration_number, course_id, cat_score, exam_score, session_id, semester_id) {
       const totalScore = Number(cat_score) + Number(exam_score);
       const grade = Result.calculateGrade(totalScore);
       try {
         const [result] = await db.query(
           `INSERT INTO results
-          (registration_number, course_id, cat_score, exam_score, semester_id, session_id, grade, created_at, updated_at)
+          (registration_number, course_id, cat_score, exam_score, session_id, semester_id, grade, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-          [registration_number, course_id, cat_score, exam_score, semester_id, session_id, grade]
+          [registration_number, course_id, cat_score, exam_score, session_id, semester_id, grade]
       );
       return result.insertId;
       }
       catch(error) {
         console.log("Error creating result:", error); 
-          return null;
+          return error;
        }
 
       
@@ -289,13 +289,13 @@ class Result {
     `);
     return rows.length ? rows[0].average_cgpa : null;
   }
-  
+  //calculate current GPA for a student in the latest semester
   static async calculateCurrentGPA(registration_number, semester_id) {
-    // Calculate CGPA (all semesters)
-    const [cgpaRows] = await db.query(`
-      SELECT
+    // Get GPA performance by semester
+    const [performanceRows] = await db.query(`
+      SELECT s.name AS semester_name, l.name AS level_name, c.semester_id,
         (SUM(
-          CASE grade
+          CASE r.grade
             WHEN 'A' THEN 5.0
             WHEN 'B' THEN 4.0
             WHEN 'C' THEN 3.0
@@ -304,30 +304,27 @@ class Result {
             WHEN 'F' THEN 0.0
             ELSE 0.0
           END * c.credit_load
-        ) / SUM(c.credit_load)) AS cgpa
+        ) / SUM(c.credit_load)) AS gpa
       FROM results r
       JOIN courses c ON r.course_id = c.id
+      JOIN semesters s ON c.semester_id = s.id
+      JOIN levels l ON c.level_id = l.id
       WHERE r.registration_number = ?
+      GROUP BY c.semester_id, s.name, l.name
+      ORDER BY c.semester_id ASC
     `, [registration_number]);
-    const cgpa = cgpaRows.length ? cgpaRows[0].cgpa : null;
-    let semesterToUse = semester_id;
-    // If semester_id is not provided, select the active semester
-    if (!semester_id) {
-      const [activeRows] = await db.query(`SELECT id FROM semesters WHERE active = 1 LIMIT 1`);
-      if (activeRows.length) {
-        semesterToUse = activeRows[0].id;
-      } else {
-        // fallback: use latest semester
-        const [latestRows] = await db.query(`SELECT id FROM semesters ORDER BY id DESC LIMIT 1`);
-        semesterToUse = latestRows.length ? latestRows[0].id : null;
-      }
-    }
-    if (!semesterToUse) return null;
 
-    // Calculate GPA and course stats for current semester
+  // Get total courses taken (all semesters)
+  const [allCoursesRows] = await db.query(`SELECT id FROM results WHERE registration_number = ?`, [registration_number]);
+  const totalCourses = allCoursesRows.length;
+
+  // Get total courses failed (current semester)
+  const [failedCoursesRows] = await db.query(`SELECT id FROM results WHERE registration_number = ? AND semester_id = ? AND grade = 'F'`, [registration_number, semester_id]);
+  const totalFailed = failedCoursesRows.length;
+    // Calculate GPA for the semester
     const [rows] = await db.query(`
       SELECT
-        r.registration_number,  
+        r.registration_number,
         SUM(
           CASE r.grade
             WHEN 'A' THEN 5.0
@@ -354,23 +351,24 @@ class Result {
       FROM results r
       JOIN courses c ON r.course_id = c.id
       WHERE r.registration_number = ? AND r.semester_id = ?
-      GROUP BY r.registration_number
-    `, [registration_number, semesterToUse]);
+    `, [registration_number, semester_id]);
 
-    // Get total courses taken (all semesters) and failed (current semester)
-    const [allCoursesRows] = await db.query(`
-      SELECT grade FROM results WHERE registration_number = ?
-    `, [registration_number]);
-    const totalCourses = allCoursesRows.length;
-
-    const [failedCoursesRows] = await db.query(`
-      SELECT grade FROM results WHERE registration_number = ? AND semester_id = ? AND grade = 'F'
-    `, [registration_number, semesterToUse]);
-    const totalFailed = failedCoursesRows.length;
-
-    // Performance summary by semester (all semesters)
-    const [performanceRows] = await db.query(`
-      SELECT s.name AS semester, r.semester_id, c.level_id,
+    // Calculate CGPA for the student (all semesters)
+    const [cgpaRows] = await db.query(`
+      SELECT
+        r.registration_number,
+        SUM(
+          CASE r.grade
+            WHEN 'A' THEN 5.0
+            WHEN 'B' THEN 4.0
+            WHEN 'C' THEN 3.0
+            WHEN 'D' THEN 2.0
+            WHEN 'E' THEN 1.0
+            WHEN 'F' THEN 0.0
+            ELSE 0.0
+          END * c.credit_load
+        ) AS total_quality_points,
+        SUM(c.credit_load) AS total_credit_hours,
         (SUM(
           CASE r.grade
             WHEN 'A' THEN 5.0
@@ -381,31 +379,24 @@ class Result {
             WHEN 'F' THEN 0.0
             ELSE 0.0
           END * c.credit_load
-        ) / SUM(c.credit_load)) AS gpa
+        ) / SUM(c.credit_load)) AS cgpa
       FROM results r
       JOIN courses c ON r.course_id = c.id
-      JOIN semesters s ON r.semester_id = s.id
-      JOIN levels l ON c.level_id = l.id
       WHERE r.registration_number = ?
-      GROUP BY r.semester_id, s.name, c.level_id
-      ORDER BY r.semester_id ASC
     `, [registration_number]);
 
-    if (rows.length) {
-      return {
-        ...rows[0],
-        total_courses: totalCourses,
-        total_failed: totalFailed,
-        cgpa,
-        performance: performanceRows.map(row => ({
-          semester: row.semester,
-          semester_id: row.semester_id,
-          level_id: row.level_id,
-          gpa: row.gpa
-        }))
-      };
-    }
-    return null;
+    // Always return CGPA, total courses, and performance, even if no results in active semester
+    return {
+      gpa: rows.length && rows[0].total_credit_hours > 0 ? rows[0].gpa : null,
+      cgpa: cgpaRows.length && cgpaRows[0].total_credit_hours > 0 ? cgpaRows[0].cgpa : null,
+      total_courses: totalCourses,
+      total_failed: totalFailed,
+      performance: performanceRows.map(row => ({
+        semester: `${row.level_name} ${row.semester_name}`,
+        gpa: row.gpa
+      }))
+    };
   }
+
 }
 module.exports = Result;

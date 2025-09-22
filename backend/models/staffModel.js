@@ -4,7 +4,10 @@ const bcrypt = require("bcrypt");
 
 class Staff {
   static async findByUsername(username) {
-    const [rows] = await db.query("SELECT * FROM staff WHERE username = ?", [username]);
+    const [rows] = await db.query(`SELECT * 
+      FROM staff 
+      WHERE username = ? 
+      or email = ?`, [username, username]);
     return rows.length ? rows[0] : null;
   }
 static async findById(id) {
