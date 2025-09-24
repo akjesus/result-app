@@ -49,7 +49,6 @@ export default function ResultManagement() {
   useEffect(() => {
     getCoursesWithResults()
       .then(res => {
-        console.log(res.data.courses);
         setCoursesWithResults(res.data.courses);
       })
       .catch(err => console.error(err));
@@ -64,55 +63,45 @@ export default function ResultManagement() {
   return (
     <>
     <ToastContainer />
-    <Box p={3}>
+    <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       {/* Header */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78" }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
         Result Management
       </Typography>
       {/* Quick Navigation Buttons */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
         <Button
           variant="contained"
-          sx={{ bgcolor: "#2C2C78" }}
+          sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }}
           onClick={() => navigate("/admin/results")}
         >
           Results
         </Button>
-        <Button variant="outlined" onClick={() => navigate("/admin/probation")}>
-          Probation List
-        </Button>
-        <Button variant="contained"  sx={{ bgcolor: "#2C2C78" }} onClick={() => setOpenUploadModal(true)}>
-          Upload Results
-        </Button>
-        <Button
-          variant="contained"
-           sx={{ bgcolor: "#2C2C78" }}
-          onClick={() => setShowCoursesWithResults(true)}
-        >
-          Uploaded Results 
-        </Button>
+        <Button variant="outlined" sx={{ minWidth: { xs: 120, sm: 150 } }} onClick={() => navigate("/admin/probation")}>Probation List</Button>
+        <Button variant="contained" sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }} onClick={() => setOpenUploadModal(true)}>Upload Results</Button>
+        <Button variant="contained" sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }} onClick={() => setShowCoursesWithResults(true)}>Uploaded Results</Button>
       </Box>
       {/* Dialog Tab for Courses With Results */}
       <Dialog open={showCoursesWithResults} onClose={() => setShowCoursesWithResults(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Courses With Uploaded Results</DialogTitle>
         <DialogContent>
-          <Table>
+          <Table sx={{ minWidth: 320 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>Course Code</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Course Title</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Session</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Semester</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Course Code</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Course Title</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Session</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Semester</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {coursesWithResults.length > 0
                 ? coursesWithResults.map((course, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>{course.code}</TableCell>
-                      <TableCell>{course.name}</TableCell>
-                      <TableCell>{course.session}</TableCell>
-                      <TableCell>{course.semester}</TableCell>
+                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.code}</TableCell>
+                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.name}</TableCell>
+                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.session}</TableCell>
+                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.semester}</TableCell>
                     </TableRow>
                   ))
                 : (
@@ -134,16 +123,15 @@ export default function ResultManagement() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-
       {/* Departments & Faculties Table with Pagination */}
-      <Paper>
+      <Paper sx={{ overflowX: 'auto' }}>
         <TableContainer>
-          <Table>
+          <Table sx={{ minWidth: 320, width: '100%' }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Faculties</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Departments</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Faculties</TableCell>
+                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -151,27 +139,42 @@ export default function ResultManagement() {
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((departments) => (
                   <TableRow key={departments.id}>
-                    <TableCell>{departments.name}</TableCell>
-                    <TableCell>{departments.school}</TableCell>
-                    <TableCell>
-                      <Tooltip title="View">
-                        <IconButton
-                          color="secondary"
-                          onClick={() => navigate(`/admin/results/${departments.id}`)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton color="primary">
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton color="error">
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
+                    <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{departments.name}</TableCell>
+                    <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{departments.school}</TableCell>
+                    <TableCell sx={{ minWidth: 90, maxWidth: 120, p: { xs: 0.5, sm: 1 }, overflow: 'hidden', textAlign: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
+                        <Tooltip title="View">
+                          <IconButton
+                            color="secondary"
+                            size="small"
+                            sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 0.5, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                            onClick={() => navigate(`/admin/results/${departments.id}`)}
+                            aria-label="View Department Results"
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 0.5, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                            aria-label="Edit Department"
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <IconButton
+                            color="error"
+                            size="small"
+                            sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 0.5, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                            aria-label="Delete Department"
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

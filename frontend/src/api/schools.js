@@ -4,7 +4,6 @@ import axios from "axios";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
 const token = localStorage.getItem('token')
 
-console.log('REACT_APP_BASE_URL:', process.env.REACT_APP_BASE_URL);
 
 export const getSchools = () => axios.get(`${BASE_URL}/schools/faculties`,
     {
@@ -79,6 +78,7 @@ export const getCoursesWithResults = () => axios.get(`${BASE_URL}/results/course
          'Authorization': `Bearer ${token}` 
           }
 });
+
 export const addSchool = (data) => axios.post(`${BASE_URL}/schools/faculties`, data);
 export const updateSchool = (id, data) => axios.put(`${BASE_URL}/schools/faculties/${id}`, data);
 export const deleteSchool = (id) => axios.delete(`${BASE_URL}/schools/faculties/${id}`);

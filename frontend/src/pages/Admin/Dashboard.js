@@ -1,5 +1,5 @@
 import React from "react";
-import { getDashbaordStats } from "../../api/dashboard";
+import { getDashboardStats } from "../../api/dashboard";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   // Stats state
   const [stats, setStats] = useState([]);
   useEffect(() => {
-    getDashbaordStats()
+    getDashboardStats()
       .then((res) => {
         // Assuming API returns an object with keys matching the stat keys
         const data = res.data.dashboardData;

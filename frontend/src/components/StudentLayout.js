@@ -36,7 +36,7 @@ const StudentLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("studentToken");
+    localStorage.removeItem("token");
     localStorage.removeItem("role");
     navigate("/login");
   };
