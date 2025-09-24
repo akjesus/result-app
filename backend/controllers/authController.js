@@ -32,7 +32,7 @@ exports.login = async (req, res) => {
         }}
       // Generate JWT token
       const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
-      res.status(200).json({ success: true, code: 200, role:user.role, message: "Login successful", token });
+      res.status(200).json({ success: true, code: 200, role:user.role, message: "Login successful, navigating to Dashboard", token });
 
     } catch (err) {
       console.log("Login error:", err);

@@ -236,18 +236,26 @@ export default function AdminCourses() {
                   <TableCell>{course.credit}</TableCell>
                   <TableCell>{course.active}</TableCell>
                   <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpen(course, index)}
-                    >
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(index)}
-                    >
-                      <Delete />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', alignItems: 'center' }}>
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                        onClick={() => handleOpen(course, index)}
+                        aria-label="Edit Course"
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        size="small"
+                        sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                        onClick={() => handleDelete(index)}
+                        aria-label="Delete Course"
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}

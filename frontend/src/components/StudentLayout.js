@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Drawer,
   List,
@@ -16,6 +16,8 @@ import {
   BarChart,
   Settings,
   Logout,
+  ChevronLeft,
+  ChevronRight,
 } from "@mui/icons-material";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -31,24 +33,38 @@ const menuItems = [
 const StudentLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("studentToken");
     localStorage.removeItem("role");
     navigate("/login");
   };
-  
+
   return (
-    <Box sx={{ display: "flex",width: "100%", minHeight: "100vh", height: "100vh" }}>
+    <Box sx={{ display: "flex", width: "100%", minHeight: "100vh", height: "100vh" }}>
+      {/* Sidebar toggle button for mobile */}
+      <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
+        <Button
+          variant="contained"
+          sx={{ minWidth: 0, p: 1, bgcolor: "#2C2C78" }}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+        </Button>
+      </Box>
       {/* Sidebar */}
       <Drawer
-        variant="permanent"
+        variant={sidebarOpen ? "temporary" : "permanent"}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
+          display: { xs: sidebarOpen ? "block" : "none", md: "block" },
           "& .MuiDrawer-paper": {
             width: drawerWidth,
-            backgroundColor: "#87CEEB", // light blue
+            backgroundColor: "#87CEEB",
             color: "white",
           },
         }}
@@ -66,6 +82,7 @@ const StudentLayout = () => {
                   location.pathname === item.path ? "#2C2C78" : "transparent",
                 "&:hover": { backgroundColor: "#4682B4" },
               }}
+              onClick={() => setSidebarOpen(false)}
             >
               <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
               <ListItemText
@@ -78,7 +95,6 @@ const StudentLayout = () => {
             </ListItem>
           ))}
         </List>
-
         {/* Logout button at bottom */}
         <Box sx={{ flexGrow: 1 }} />
         <Box sx={{ p: 2 }}>
@@ -96,14 +112,13 @@ const StudentLayout = () => {
           </Button>
         </Box>
       </Drawer>
-
       {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           bgcolor: "#f4f6f8",
-          p: 3,
+          p: { xs: 1, md: 3 },
           display: "flex",
           justifyContent: "center",
           alignItems: "flex-start",
@@ -111,7 +126,7 @@ const StudentLayout = () => {
       >
         <Paper
           elevation={4}
-          sx={{ p: 3, width: "90%", minHeight: "80vh", borderRadius: 3 }}
+          sx={{ p: { xs: 1, md: 3 }, width: { xs: "100%", md: "90%" }, minHeight: "80vh", borderRadius: 3 }}
         >
           <Outlet />
         </Paper>

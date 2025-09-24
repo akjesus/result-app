@@ -1,6 +1,6 @@
 import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/results";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
+const API_URL = `${BASE_URL}/results`;
 const token = localStorage.getItem('token')
 
 export const getResults= (semester, department, session, level) => axios.get(API_URL,

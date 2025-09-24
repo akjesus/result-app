@@ -9,6 +9,7 @@ router.use(verifyToken); // Protect all routes after this middleware
 
 
 router.get('/student', resultController.getResultsByStudent);
+router.get('/courses', resultController.getCoursesWithResults);
 router.get('/course/:id', restrictTo("admin", "staff"), resultController.getResultsByCourse);
 router.get('/department/:id', restrictTo("admin", "staff"), resultController.getResultsByDepartment);
 router.get('/department/:deptId/level/:levelId', restrictTo("admin", "staff"), resultController.getResultsByDepartmentAndLevel);

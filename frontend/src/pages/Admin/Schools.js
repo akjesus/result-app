@@ -149,13 +149,27 @@ export default function SchoolsPage() {
             {paginated.map(school => (
               <TableRow key={school.id}>
                 <TableCell>{school.name}</TableCell>
-                <TableCell align="right">
-                  <IconButton color="primary" onClick={() => handleEdit(school)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(school.id)}>
-                    <Delete />
-                  </IconButton>
+                <TableCell align="right" sx={{ minWidth: 90, maxWidth: 120, p: { xs: 0.5, sm: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                      onClick={() => handleEdit(school)}
+                      aria-label="Edit School"
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                      onClick={() => handleDelete(school.id)}
+                      aria-label="Delete School"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}

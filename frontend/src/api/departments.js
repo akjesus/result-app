@@ -1,7 +1,9 @@
 // src/api/departments.js
 import axios from 'axios';
 const token = localStorage.getItem('token')
-const API_URL = 'http://localhost:5000/api/schools/departments';
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
+const API_URL = `${BASE_URL}/schools/departments`;
+
 
 export const getDepartments = () => axios.get(API_URL, {
     

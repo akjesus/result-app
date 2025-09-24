@@ -42,44 +42,41 @@ export default function StudentProfile() {
   return (
     <>
     <ToastContainer/>
-    <Container sx={{ mt: 4 }}>
+    <Container sx={{ mt: 4, px: { xs: 1, sm: 2 }, maxWidth: { xs: '100%', sm: 500 } }}>
       {/* Profile Picture */}
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
         <Avatar
           src={profilePic}
           alt="Profile"
-          sx={{ width: 120, height: 120 }}
+          sx={{ width: 100, height: 100, mb: 1 }}
         />
-      </Box>
-
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-        <Button variant="outlined" component="label">
+        <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
           Upload Picture
           <input type="file" hidden onChange={handleImageChange} />
         </Button>
       </Box>
 
-      {/* Profile Info (Left Aligned with Bold Labels) */}
-      <Box sx={{ textAlign: "left", maxWidth: 400, margin: "0 auto" }}>
-        <Typography variant="body1">
+      {/* Profile Info (Responsive) */}
+      <Box sx={{ textAlign: "left", maxWidth: 400, mx: "auto", px: { xs: 1, sm: 0 } }}>
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Full Name:</strong> {profileData.fullName}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Matric No:</strong> {profileData.matric}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>School:</strong> {profileData.school}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Department:</strong> {profileData.department}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Email:</strong> {profileData.email}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Phone:</strong> {profileData.phone}
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body1" sx={{ fontSize: { xs: 14, sm: 16 } }}>
           <strong>Level:</strong> {profileData.level}
         </Typography>
       </Box>
@@ -88,7 +85,7 @@ export default function StudentProfile() {
       <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
         <Button
           variant="contained"
-          sx={{ bgcolor: "#2C2C78" }}
+          sx={{ bgcolor: "#2C2C78", width: { xs: "100%", sm: "auto" } }}
           onClick={handleSave}
         >
           Save Profile

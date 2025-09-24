@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getDepartments } from "../../api/departments";
+import { getCoursesWithResults } from "../../api/schools";
 import {
   Box,
   Typography,
@@ -15,25 +16,41 @@ import {
   Paper,
   TablePagination,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UploadResultsModal from "./UploadResultsModal";
+import AdminCourses from "./Courses";
 
 export default function ResultManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [departments, setDepartments] = useState([]);
+  const [coursesWithResults, setCoursesWithResults] = useState([]);
   const [openUploadModal, setOpenUploadModal] = useState(false);
+  const [showCoursesWithResults, setShowCoursesWithResults] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     getDepartments()
       .then(res => {
         setDepartments(res.data.departments);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  // Fetch courses with uploaded results from backend
+  useEffect(() => {
+    getCoursesWithResults()
+      .then(res => {
+        console.log(res.data.courses);
+        setCoursesWithResults(res.data.courses);
       })
       .catch(err => console.error(err));
   }, []);
@@ -64,17 +81,49 @@ export default function ResultManagement() {
         <Button variant="outlined" onClick={() => navigate("/admin/probation")}>
           Probation List
         </Button>
-        <Button variant="outlined" onClick={() => navigate("/admin/settings")}>
-          Settings
+        <Button variant="contained"  sx={{ bgcolor: "#2C2C78" }} onClick={() => setOpenUploadModal(true)}>
+          Upload Results
         </Button>
-        <Button variant="outlined" onClick={() => navigate("/admin/departments")}>
-          Departments
-        </Button>
-        <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={() => setOpenUploadModal(true)}>
-          Upload Results (CSV)
+        <Button
+          variant="contained"
+           sx={{ bgcolor: "#2C2C78" }}
+          onClick={() => setShowCoursesWithResults(true)}
+        >
+          Uploaded Results 
         </Button>
       </Box>
-
+      {/* Dialog Tab for Courses With Results */}
+      <Dialog open={showCoursesWithResults} onClose={() => setShowCoursesWithResults(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>Courses With Uploaded Results</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: "bold" }}>Course Code</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Course Title</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Session</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Semester</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {coursesWithResults.length > 0
+                ? coursesWithResults.map((course, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{course.code}</TableCell>
+                      <TableCell>{course.name}</TableCell>
+                      <TableCell>{course.session}</TableCell>
+                      <TableCell>{course.semester}</TableCell>
+                    </TableRow>
+                  ))
+                : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">No courses with uploaded results found.</TableCell>
+                    </TableRow>
+                  )}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
       {/* Search */}
       <TextField
         label="Search by Department or Faculty"
