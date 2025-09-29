@@ -1,5 +1,5 @@
 import React from "react";
-import { getDashbaordStats } from "../../api/dashboard";
+import { getDashboardStats } from "../../api/dashboard";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   // Stats state
   const [stats, setStats] = useState([]);
   useEffect(() => {
-    getDashbaordStats()
+    getDashboardStats()
       .then((res) => {
         // Assuming API returns an object with keys matching the stat keys
         const data = res.data.dashboardData;
@@ -78,13 +78,12 @@ export default function AdminDashboard() {
   return (
     <>
     <ToastContainer />
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom>
+    <Box sx={{ p: { xs: 1, sm: 2 }, maxWidth: 900, mx: "auto" }}>
+      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: 18, sm: 24 } }}>
         Admin Dashboard
       </Typography>
-
       {/* Summary Cards */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         {stats.map((item) => (
           <Grid item xs={12} sm={6} md={3} key={item.key}>
             <Card
@@ -93,63 +92,66 @@ export default function AdminDashboard() {
                 borderRadius: 2,
                 cursor: item.path ? "pointer" : "default",
                 "&:hover": item.path ? { bgcolor: "#e0e0e0" } : {},
+                minWidth: 0,
               }}
-              onClick={() => item.path && navigate(item.path)}
+              onClick={() => item.path && (window.innerWidth >= 900) && navigate(item.path)}
             >
               <CardContent>
-                <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>
                   {item.label}
                 </Typography>
-                <Typography variant="h6">{item.value}</Typography>
+                <Typography variant="h6" sx={{ fontSize: { xs: 16, sm: 22 } }}>{item.value}</Typography>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
-
       {/* Charts Section */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
         {/* Department Performance */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: 2 }}>
+          <Card sx={{ borderRadius: 2, mb: { xs: 2, md: 0 } }}>
             <CardContent>
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold" }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold", fontSize: { xs: 15, sm: 18 } }}>
                 Departmental Performance
               </Typography>
-              <BarChart width={400} height={250} data={deptPerformance}>
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 5]} />
-                <Tooltip />
-                <Bar dataKey="avgGPA" fill="#2C2C78" />
-              </BarChart>
+              <Box sx={{ width: "100%", minWidth: 0, overflowX: "auto" }}>
+                <BarChart width={window.innerWidth < 600 ? 300 : 400} height={250} data={deptPerformance}>
+                  <XAxis dataKey="name" />
+                  <YAxis domain={[0, 5]} />
+                  <Tooltip />
+                  <Bar dataKey="avgGPA" fill="#2C2C78" />
+                </BarChart>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
-
         {/* CGPA Distribution */}
         <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent>
-              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold" }}>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold", fontSize: { xs: 15, sm: 18 } }}>
                 CGPA Distribution
               </Typography>
-              <PieChart width={400} height={250}>
-                <Pie
-                  data={cgpaDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={90}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {cgpaDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
+              <Box sx={{ width: "100%", minWidth: 0, overflowX: "auto" }}>
+                <PieChart width={window.innerWidth < 600 ? 300 : 400} height={250}>
+                  <Pie
+                    data={cgpaDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={window.innerWidth < 600 ? 70 : 90}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {cgpaDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

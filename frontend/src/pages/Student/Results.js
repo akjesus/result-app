@@ -106,12 +106,12 @@ export default function StudentResults() {
   return (
     <>
     <ToastContainer />
-    <Container sx={{ mt: 6 }}>
+    <Container sx={{ mt: 6, px: { xs: 1, sm: 2 }, maxWidth: { xs: '100%', sm: 600 } }}>
       {/* Search Form */}
       <Paper
         elevation={4}
         sx={{
-          p: 4,
+          p: { xs: 2, sm: 4 },
           width: "100%",
           maxWidth: 600,
           margin: "0 auto",
@@ -119,7 +119,7 @@ export default function StudentResults() {
           textAlign: "center",
         }}
       >
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: 16, sm: 20 } }}>
           Check Your Results
         </Typography>
 
@@ -185,12 +185,11 @@ export default function StudentResults() {
       {/* Results Table */}
       {results && (
         <Box sx={{ mt: 5 }}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Results for {formData.session} - Level {formData.level} -{" "}
-              {formData.semester} Semester
+          <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, overflowX: "auto" }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: 16, sm: 20 } }}>
+              Results for {formData.session} - Level {formData.level} - {formData.semester} Semester
             </Typography>
-            <Table>
+            <Table sx={{ minWidth: 320 }}>
               <TableHead>
                 <TableRow>
                   <TableCell><b>Course Code</b></TableCell>
@@ -202,19 +201,18 @@ export default function StudentResults() {
               <TableBody>
                 {results.map((course, index) => (
                   <TableRow key={index}>
-                    <TableCell>{course.code}</TableCell>
-                    <TableCell>{course.title}</TableCell>
-                    <TableCell>{course.credit}</TableCell>
-                    <TableCell>{course.grade}</TableCell>
+                    <TableCell sx={{ fontSize: { xs: 13, sm: 15 } }}>{course.code}</TableCell>
+                    <TableCell sx={{ fontSize: { xs: 13, sm: 15 } }}>{course.title}</TableCell>
+                    <TableCell sx={{ fontSize: { xs: 13, sm: 15 } }}>{course.credit}</TableCell>
+                    <TableCell sx={{ fontSize: { xs: 13, sm: 15 } }}>{course.grade}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-
             {/* Download PDF Button */}
             <Button
               variant="contained"
-              sx={{ mt: 3, bgcolor: "#2C2C78", ":hover": { bgcolor: "#1f1f5c" } }}
+              sx={{ mt: 3, bgcolor: "#2C2C78", width: { xs: "100%", sm: "auto" }, ":hover": { bgcolor: "#1f1f5c" } }}
               onClick={handleDownloadPDF}
             >
               Download PDF

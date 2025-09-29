@@ -80,14 +80,14 @@ export default function StudentSettings() {
   return (
     <>
     <ToastContainer/>
-    <Container sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 500, borderRadius: 3 }}>
-        <Typography variant="h6" gutterBottom align="center">
+    <Container sx={{ mt: 4, px: { xs: 1, sm: 2 }, display: "flex", justifyContent: "center", alignItems: "center", minHeight: { xs: "100vh", sm: "auto" } }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, width: "100%", maxWidth: 500, borderRadius: 3 }}>
+        <Typography variant="h6" gutterBottom align="center" sx={{ fontSize: { xs: 18, sm: 22 } }}>
           Settings
         </Typography>
 
         {/* Change Password */}
-        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+        <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontSize: { xs: 15, sm: 18 } }}>
           Change Password
         </Typography>
 
@@ -172,7 +172,7 @@ export default function StudentSettings() {
         <Button
           variant="contained"
           fullWidth
-          sx={{ mt: 3, bgcolor: "#2C2C78", ":hover": { bgcolor: "#1f1f5c" } }}
+          sx={{ mt: 3, bgcolor: "#2C2C78", width: { xs: "100%", sm: "auto" }, ":hover": { bgcolor: "#1f1f5c" } }}
           onClick={handleSave}
         >
           Save Settings

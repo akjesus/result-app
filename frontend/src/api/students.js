@@ -1,7 +1,9 @@
 // src/api/departments.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/students';
+
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
+const API_URL = `${BASE_URL}/students`;
 const token = localStorage.getItem('token')
 
 export const getStudents = () => axios.get(API_URL, {
@@ -28,7 +30,7 @@ export const updateDepartment = (id, data) => axios.put(`${API_URL}/${id}`, data
 });
 
 
-export const getResults = ( data) => axios.get('http://localhost:5000/api/results/student',
+export const getResults = ( data) => axios.get(`${BASE_URL}/results/student`,
         {
             params: {
                 semester: data.semester,
@@ -42,7 +44,7 @@ export const getResults = ( data) => axios.get('http://localhost:5000/api/result
         }
 );
 
-export const getProfile = () => axios.get('http://localhost:5000/api/auth/me',
+export const getProfile = () => axios.get(`${BASE_URL}/auth/me`,
         {   headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
@@ -50,7 +52,7 @@ export const getProfile = () => axios.get('http://localhost:5000/api/auth/me',
         }
 );
 
-export const changePassword = (data) => axios.post('http://localhost:5000/api/students/change-password',
+export const changePassword = (data) => axios.post(`${BASE_URL}/students/change-password`,
         {
             old_password: data.currentPassword,
             new_password: data.newPassword,
@@ -65,7 +67,7 @@ export const changePassword = (data) => axios.post('http://localhost:5000/api/st
 );
 
 
-export const getCurrentGPA = () => axios.get('http://localhost:5000/api/students/gpa',
+export const getCurrentGPA = () => axios.get(`${BASE_URL}/students/gpa`,
         {   headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

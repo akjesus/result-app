@@ -398,5 +398,18 @@ class Result {
     };
   }
 
+  static async getCoursesWithResults() {
+    const [rows] = await db.query(`
+      SELECT DISTINCT c.id, c.name, c.code, c.credit_load,
+        s.name AS session, sem.name AS semester
+      FROM courses c
+      JOIN results r ON c.id = r.course_id
+      JOIN sessions s ON r.session_id = s.id
+      JOIN semesters sem ON r.semester_id = sem.id
+      ORDER BY c.code ASC
+    `);
+    return rows;
+  }
+
 }
 module.exports = Result;

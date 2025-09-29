@@ -215,7 +215,7 @@ export default function AdminStudents() {
       </Box>
 
       {/* Students Table */}
-      <Table>
+      <Table sx={{ minWidth: 320, width: '100%', overflowX: 'auto' }}>
         <TableHead>
           <TableRow>
             <TableCell>First Name</TableCell>
@@ -223,8 +223,8 @@ export default function AdminStudents() {
             <TableCell>Matric Number</TableCell>
             <TableCell>School</TableCell>
             <TableCell>Department</TableCell>
-            <TableCell>Level</TableCell>
-            <TableCell>Email</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Level</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -236,11 +236,29 @@ export default function AdminStudents() {
               <TableCell>{student.matric}</TableCell>
               <TableCell>{student.school}</TableCell>
               <TableCell>{student.department}</TableCell>
-              <TableCell>{student.level}</TableCell>
-              <TableCell>{student.email}</TableCell>
-              <TableCell>
-                <IconButton color="primary" onClick={() => handleOpen(student, index)}><Edit /></IconButton>
-                <IconButton color="error" onClick={() => handleDelete(index)}><Delete /></IconButton>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.level}</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.email}</TableCell>
+              <TableCell sx={{ minWidth: 70, maxWidth: 90, p: { xs: 0.25, sm: 0.5 }, overflow: 'hidden', textAlign: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
+                  <IconButton
+                    color="primary"
+                    size="small"
+                    sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                    onClick={() => handleOpen(student, index)}
+                    aria-label="Edit Student"
+                  >
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    size="small"
+                    sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                    onClick={() => handleDelete(index)}
+                    aria-label="Delete Student"
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </Box>
               </TableCell>
             </TableRow>
           ))}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -19,7 +19,9 @@ import {
   School,
   BarChart,
   Grade,
-  Settings,Logout
+  Settings,Logout,
+  ChevronLeft,
+  ChevronRight
 } from "@mui/icons-material";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -40,6 +42,7 @@ const menuItems = [
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -52,15 +55,28 @@ const AdminLayout = () => {
     <>
     <ToastContainer/>
     <Box sx={{ display: "flex", height: "100vh" }}>
+      {/* Sidebar toggle button for mobile */}
+      <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
+        <Button
+          variant="contained"
+          sx={{ minWidth: 0, p: 1, bgcolor: "#2C2C78" }}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+        </Button>
+      </Box>
       {/* Sidebar */}
       <Drawer
-        variant="permanent"
+        variant={sidebarOpen ? "temporary" : "permanent"}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
+          display: { xs: sidebarOpen ? "block" : "none", md: "block" },
           "& .MuiDrawer-paper": {
             width: drawerWidth,
-            backgroundColor: "#87CEEB", // light blue
+            backgroundColor: "#87CEEB",
             color: "white",
           },
         }}
@@ -78,20 +94,20 @@ const AdminLayout = () => {
                   location.pathname === item.path ? "#2C2C78" : "transparent",
                 "&:hover": { backgroundColor: "#4682B4" },
               }}
-            ><ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
-                          <ListItemText
-                            primary={item.text}
-                            sx={{
-                              color: location.pathname === item.path ? "white" : undefined,
-                              fontWeight: location.pathname === item.path ? 700 : undefined,
-                            }}
-                          />
-                        </ListItem>
+              onClick={() => setSidebarOpen(false)}
+            >
+              <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{
+                  color: location.pathname === item.path ? "white" : undefined,
+                  fontWeight: location.pathname === item.path ? 700 : undefined,
+                }}
+              />
+            </ListItem>
           ))}
         </List>
-
-           {/* Logout button at bottom */}
-           
+        {/* Logout button at bottom */}
         <Box sx={{ flexGrow: 1 }} />
         <Box sx={{ p: 2 }}>
           <Button
@@ -107,16 +123,14 @@ const AdminLayout = () => {
             Logout
           </Button>
         </Box>
-
       </Drawer>
-
       {/* Main content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           bgcolor: "#f4f6f8",
-          p: 3,
+          p: { xs: 1, md: 3 },
           display: "flex",
           justifyContent: "center",
           alignItems: "flex-start",
@@ -124,7 +138,7 @@ const AdminLayout = () => {
       >
         <Paper
           elevation={4}
-          sx={{ p: 3, width: "90%", minHeight: "80vh", borderRadius: 3 }}
+          sx={{ p: { xs: 1, md: 3 }, width: { xs: "100%", md: "90%" }, minHeight: "80vh", borderRadius: 3 }}
         >
           <Outlet />
         </Paper>

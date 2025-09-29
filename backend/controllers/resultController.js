@@ -392,7 +392,6 @@ exports.getAllResultsForStudent = async (req, res) => {
 
 }
 
-
 //get current GPA for a student
 exports.getCurrentGPA = async (req, res) => {
     try {
@@ -445,3 +444,12 @@ exports.getallGPAforDepartment = async (req, res) => {
         return res.status(500).json({ success: false, code: 500, message: err.message });
     }
 }
+
+exports.getCoursesWithResults = async (req, res) => {
+    try {
+        const courses = await Result.getCoursesWithResults();
+        return res.status(200).json({success: true, code: 200, courses});
+    } catch (err) {
+        return res.status(500).json({success: false, code: 500, message: err.message });
+    }
+};

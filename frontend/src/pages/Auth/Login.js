@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -29,7 +30,7 @@ function Login() {
     setError({ email: "", password: "" });
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post(`${BASE_URL}/auth/login`, {
        email, password
       });
       if (res.data.success) {    
@@ -62,7 +63,7 @@ function Login() {
           toast.error(message);
         }
       } else {
-        toast.warning(err.response.data.message);
+        toast.warning(err.response.data.message || err);
       }
     }
   };

@@ -168,13 +168,27 @@ export default function DepartmentsPage() {
               <TableRow key={dept.id}>
                 <TableCell>{dept.name}</TableCell>
                 <TableCell>{dept.school}</TableCell>
-                <TableCell align="right">
-                  <IconButton color="primary" onClick={() => handleEdit(dept)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(dept.id)}>
-                    <Delete />
-                  </IconButton>
+                <TableCell align="right" sx={{ minWidth: 90, maxWidth: 120, p: { xs: 0.5, sm: 1 }, overflow: 'hidden' }}>
+                  <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                      onClick={() => handleEdit(dept)}
+                      aria-label="Edit Department"
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                      onClick={() => handleDelete(dept.id)}
+                      aria-label="Delete Department"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
