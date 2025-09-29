@@ -12,6 +12,12 @@ import {
   IconButton,
   TablePagination,
   TextField,
+  Tabs,
+  Tab,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { Edit, Delete, Visibility, Download } from "@mui/icons-material";
 import Papa from "papaparse";
@@ -21,8 +27,17 @@ import autoTable from "jspdf-autotable";
 import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
 import { addTranscriptHeader, addTranscriptFooter } from "../../utils/pdfHeader";
 import { getResultsByDepartment } from "../../api/results";
+import { getSessionsWithSemesters, getAllLevels } from "../../api/sessions";
+
 
 export default function ResultUploadPage() {
+  const [sessions, setSessions] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [selectedSession, setSelectedSession] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const [gpaRange, setGpaRange] = useState([0, 5]);
+  const [showResults, setShowResults] = useState(false);
   const params = useParams();
   const id = params.id || params.departmentId;
   const [file, setFile] = useState(null);
@@ -32,6 +47,7 @@ export default function ResultUploadPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [levelTab, setLevelTab] = useState(0);
 
   // Convert score → grade + grade point
   const getGrade = (score) => {
@@ -105,45 +121,65 @@ export default function ResultUploadPage() {
     setOpenTranscript(true);
   };
 
-  // Bulk Download All Transcripts
+  // Bulk Download All Transcripts for current page
   const handleDownloadAll = () => {
     const doc = new jsPDF();
-
-    students.forEach((student, idx) => {
+    paginatedStudents.forEach((student, idx) => {
       if (idx !== 0) doc.addPage();
-
+      // Use the same logic as handleDownloadTranscript, but adapt for both student.results and student.courses_info
       addTranscriptHeader(doc);
-
       doc.setFontSize(11);
-      doc.text(`Name: ${student.name}`, 14, 105);
-      doc.text(`Matric No: ${student.matNo}`, 14, 112);
-      doc.text(`Faculty: ${student.faculty}`, 14, 119);
-      doc.text(`Department: ${student.department}`, 14, 126);
-      doc.text(`Level: ${student.level}`, 14, 133);
-      doc.text(`Session: ${student.session}`, 14, 140);
+      // Try both possible student object shapes
+      const name = student.name || student.student_name || '';
+      const matric = student.matNo || student.matric || '';
+      const faculty = student.faculty || '';
+      const department = student.department || student.department_name || '';
+      const level = student.level || student.level_name || '';
+      const session = student.session || '';
+      doc.text(`Name: ${name}`, 14, 105);
+      doc.text(`Matric No: ${matric}`, 14, 112);
+      if (faculty) doc.text(`Faculty: ${faculty}`, 14, 119);
+      doc.text(`Department: ${department}`, 14, 126);
+      doc.text(`Level: ${level}`, 14, 133);
+      if (session) doc.text(`Session: ${session}`, 14, 140);
 
-      const tableColumn = ["S/N", "CODE", "COURSE TITLE", "UNIT", "SCORE", "GRADE", "GP"];
-      const tableRows = [];
+      // Table
+      let tableColumn, tableRows;
+      if (Array.isArray(student.results)) {
+        tableColumn = ["S/N", "CODE", "COURSE TITLE", "UNIT", "SCORE", "GRADE", "GP"];
+        tableRows = [];
+        student.results.forEach((r, index) => {
+          tableRows.push([index + 1, r.code, r.title, r.unit, r.score, r.grade, r.gp]);
+        });
+      } else if (Array.isArray(student.courses_info)) {
+        tableColumn = ["Course Code", "Course Name", "Credit", "Score", "Grade"];
+        tableRows = [];
+        student.courses_info.forEach((course, index) => {
+          tableRows.push([
+            course.code,
+            course.name,
+            course.credit_load,
+            course.total_score,
+            course.grade
+          ]);
+        });
+      }
+      if (tableColumn && tableRows) {
+        autoTable(doc, {
+          startY: 150,
+          head: [tableColumn],
+          body: tableRows,
+        });
+      }
 
-      student.results.forEach((r, index) => {
-        tableRows.push([index + 1, r.code, r.title, r.unit, r.score, r.grade, r.gp]);
-      });
-
-      doc.autoTable({
-        startY: 150,
-        head: [tableColumn],
-        body: tableRows,
-      });
-
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.text(`Total Units: ${student.totalUnits}`, 14, finalY);
-      doc.text(`GPA: ${student.gpa}`, 14, finalY + 7);
-      doc.text(`CGPA: ${student.cgpa}`, 14, finalY + 14);
-      doc.text(`Comment: ${student.comment}`, 14, finalY + 21);
-
-      addTranscriptFooter(doc); // ✅ footer on every page
+      // GPA/CGPA/Comment if available
+      let finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 170;
+      if (student.totalUnits) doc.text(`Total Units: ${student.totalUnits}`, 14, finalY);
+      if (student.gpa) doc.text(`GPA: ${student.gpa}`, 14, finalY + 7);
+      if (student.cgpa) doc.text(`CGPA: ${student.cgpa}`, 14, finalY + 14);
+      if (student.comment) doc.text(`Comment: ${student.comment}`, 14, finalY + 21);
+      addTranscriptFooter(doc);
     });
-
     doc.save("all_transcripts.pdf");
   };
 
@@ -213,103 +249,272 @@ export default function ResultUploadPage() {
     doc.save(`${student.matric}_transcript.pdf`);
   };
 
+  // Fetch sessions and levels on mount
   useEffect(() => {
-    if (!id) return;
-    getResultsByDepartment(id)
-      .then(res => {
-          console.log(res.data.gpas);
-        setStudents(res.data.gpas || []);
-      })
-      .catch(() => setStudents([]));
-  }, [id]);
+    getSessionsWithSemesters().then(res => setSessions(res.data.sessions)).catch(() => setSessions([]));
+    getAllLevels().then(res => setLevels(res.data.levels)).catch(() => setLevels([]));
+  }, []);
 
+  // Update semesters when session changes
+  useEffect(() => {
+    if (selectedSession) {
+      const found = sessions.find(s => s.id === selectedSession || s.id === Number(selectedSession));
+      setSemesters(found ? found.semesters : []);
+    } else {
+      setSemesters([]);
+    }
+    setSelectedSemester("");
+  }, [selectedSession, sessions]);
+
+  // Manual fetch results handler
+  const [fetching, setFetching] = useState(false);
+  const handleFetchResults = () => {
+    if (id && selectedSession && selectedSemester) {
+      setFetching(true);
+      getResultsByDepartment(id, selectedSession, selectedSemester)
+        .then(res => {
+          // Attach calculated GPA to each student
+          const results = (res.data.results || []).map(student => {
+            let totalCredits = 0;
+            let totalGradePoints = 0;
+            if (Array.isArray(student.courses_info)) {
+              student.courses_info.forEach(course => {
+                totalCredits += Number(course.credit_load);
+                let gp = 0;
+                switch (course.grade) {
+                  case 'A': gp = 5; break;
+                  case 'B': gp = 4; break;
+                  case 'C': gp = 3; break;
+                  case 'D': gp = 2; break;
+                  case 'E': gp = 1; break;
+                  case 'F': gp = 0; break;
+                  default: gp = 0;
+                }
+                totalGradePoints += gp * Number(course.credit_load);
+              });
+            }
+            const gpa = totalCredits > 0 ? (totalGradePoints / totalCredits) : 0;
+            return { ...student, gpa };
+          });
+          setStudents(results);
+          setShowResults(true);
+        })
+        .catch(() => {
+          setStudents([]);
+          setShowResults(false);
+        })
+        .finally(() => setFetching(false));
+    } else {
+      setShowResults(false);
+    }
+  };
+
+  // Get all unique levels from students or from API
+  const allLevels = levels.length > 0
+    ? levels.map(l => l.name)
+    : Array.from(new Set(students.map(s => s.level || s.Level || s.level_name))).sort();
+  // Filter students by selected level
+  const studentsByLevel = allLevels.length > 0
+    ? students.filter(s => (s.level || s.Level || s.level_name) === allLevels[levelTab])
+    : students;
+  // Filter by GPA range (accurate to 2 decimal places)
+  const studentsByGpa = studentsByLevel.filter(student => {
+    let gpa = parseFloat(Number(student.gpa || student.GPA || 0).toFixed(2));
+    const min = parseFloat(gpaRange[0].toFixed(2));
+    const max = parseFloat(gpaRange[1].toFixed(2));
+    return gpa >= min && gpa <= max;
+  });
   // Filter students by search (matric or name)
-  const filteredStudents = students.filter(student =>
-    student.matric.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredStudents = studentsByGpa.filter(student =>
+    (student.matric || student.matNo || '').toLowerCase().includes(search.toLowerCase()) ||
     (student.student_name && student.student_name.toLowerCase().includes(search.toLowerCase()))
   );
-
   // Paginate filtered students
   const paginatedStudents = filteredStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box p={3}>
-      
+  <Box p={3}>
+    <Box mb={2}>
       {students.length > 0 && (
         <Typography variant="h5" sx={{ fontWeight: "bold", color: "#2C2C78" }}>
-        Department Results: {students[0].department_name}
-      </Typography>
-      )}
-      <Box mt={2}>
-        <TextField
-          label="Search by Matric or Name"
-          variant="outlined"
-          size="small"
-          fullWidth
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          sx={{ mb: 2 }}
-        />
-      </Box>
-      {/* Results Table */}
-      <Box mt={4}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-          Results
+          Department Results: {students[0].department_name}
         </Typography>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: "bold" }}>Matric</TableCell>
-              <TableCell>Student Name</TableCell>
-              <TableCell>Courses & Results</TableCell>
-              <TableCell>Total Credits</TableCell>
-              <TableCell>Total Grade Points</TableCell>
-              <TableCell>GPA</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedStudents.map((student, idx) => {
-              let totalCredits = 0;
-              let totalGradePoints = 0;
-              if (Array.isArray(student.courses_info) && student.courses_info.length > 0) {
-                student.courses_info.forEach(course => {
-                  totalCredits += Number(course.credit_load);
-                  let gp = 0;
-                  switch (course.grade) {
-                    case 'A': gp = 5; break;
-                    case 'B': gp = 4; break;
-                    case 'C': gp = 3; break;
-                    case 'D': gp = 2; break;
-                    case 'E': gp = 1; break;
-                    case 'F': gp = 0; break;
-                    default: gp = 0;
-                  }
-                  totalGradePoints += gp * Number(course.credit_load);
-                });
-              }
-              const gpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
-              return (
-                <TableRow key={student.matric}>
-                  <TableCell>{student.matric}</TableCell>
-                  <TableCell>{student.student_name}</TableCell>
-                  <TableCell>
-                    {Array.isArray(student.courses_info) && student.courses_info.length > 0
-                      ? student.courses_info.map(course => `${course.code} (${course.grade}, ${course.credit_load})`).join(', ')
-                      : 'No courses'}
-                  </TableCell>
-                  <TableCell>{totalCredits}</TableCell>
-                  <TableCell>{totalGradePoints}</TableCell>
-                  <TableCell>{gpa}</TableCell>
-                  <TableCell>
-                    <Button variant="outlined" size="small" onClick={() => handleDownloadTranscript(student)}>
-                      Download Transcript
-                    </Button>
-                  </TableCell>
+      )}
+    </Box>
+  {/* Dropdowns for session, semester, GPA range, and fetch button */}
+  <Box display="flex" gap={2} mb={2} alignItems="center">
+      <FormControl sx={{ minWidth: 160 }} size="small">
+        <InputLabel>Session</InputLabel>
+        <Select
+          value={selectedSession}
+          label="Session"
+          onChange={e => setSelectedSession(e.target.value)}
+        >
+          <MenuItem value=""><em>Select Session</em></MenuItem>
+          {sessions.map(session => (
+            <MenuItem key={session.id} value={session.id}>{session.name}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <FormControl sx={{ minWidth: 160 }} size="small" disabled={!selectedSession}>
+        <InputLabel>Semester</InputLabel>
+        <Select
+          value={selectedSemester}
+          label="Semester"
+          onChange={e => setSelectedSemester(e.target.value)}
+        >
+          <MenuItem value=""><em>Select Semester</em></MenuItem>
+          {semesters.map(sem => (
+            <MenuItem key={sem.id} value={sem.id}>{sem.name}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <FormControl sx={{ minWidth: 180 }} size="small">
+        <InputLabel>GPA Range</InputLabel>
+        <Select
+          value={gpaRange.map(v => v.toFixed(2)).join('-')}
+          label="GPA Range"
+          onChange={e => {
+            const [min, max] = e.target.value.split('-').map(Number);
+            setGpaRange([min, max]);
+          }}
+          renderValue={() => {
+            if (gpaRange[0] === 0 && gpaRange[1] === 5) return 'All';
+            return `${gpaRange[0].toFixed(2)} - ${gpaRange[1].toFixed(2)}`;
+          }}
+        >
+          <MenuItem value="0.00-5.00">All</MenuItem>
+          <MenuItem value="4.50-5.00">4.50 - 5.00</MenuItem>
+          <MenuItem value="3.50-4.49">3.50 - 4.49</MenuItem>
+          <MenuItem value="2.50-3.49">2.50 - 3.49</MenuItem>
+          <MenuItem value="2.00-2.49">2.00 - 2.49</MenuItem>
+          <MenuItem value="0.00-1.99">0.00 - 1.99</MenuItem>
+        </Select>
+      </FormControl>
+      <Button
+        variant="contained"
+        sx={{ color: "#2C2C78" }}
+        onClick={handleFetchResults}
+        disabled={fetching || !selectedSession || !selectedSemester}
+      >
+        {fetching ? 'Fetching...' : 'Fetch Results'}
+      </Button>
+    </Box>
+    {/* Level Tabs */}
+    {allLevels.length > 0 && (
+      <Tabs
+        value={levelTab}
+        onChange={(e, newValue) => {
+          setLevelTab(newValue);
+          setPage(0);
+        }}
+        sx={{ mb: 2 }}
+        variant="scrollable"
+        scrollButtons="auto"
+      >
+        {allLevels.map((level, idx) => (
+          <Tab key={level} label={`${level} Level`} />
+        ))}
+      </Tabs>
+    )}
+    <Box mt={2}>
+      <TextField
+        label="Search by Matric or Name"
+        variant="outlined"
+        size="small"
+        fullWidth
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        sx={{ mb: 2 }}
+        disabled={!showResults}
+      />
+    </Box>
+    {/* Results Table */}
+    {showResults && (
+      <Box mt={4}>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            Results
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleDownloadAll}
+            startIcon={<Download />}
+            disabled={!students.length}
+          >
+            Download All Transcripts
+          </Button>
+        </Box>
+        {/* Dynamically generate course columns */}
+        {(() => {
+          let allCourses = [];
+          paginatedStudents.forEach(student => {
+            if (Array.isArray(student.courses_info)) {
+              student.courses_info.forEach(course => {
+                if (!allCourses.find(c => c.code === course.code)) {
+                  allCourses.push({ code: course.code, name: course.name });
+                }
+              });
+            }
+          });
+          allCourses.sort((a, b) => a.code.localeCompare(b.code));
+          return (
+            <Table sx={{ minWidth: 650, overflowX: 'auto', display: 'block' }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Matric NO</TableCell>
+                  {allCourses.map(course => (
+                    <TableCell key={course.code} sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{course.code}</TableCell>
+                  ))}
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>GPA</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Download</TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              </TableHead>
+              <TableBody>
+                {paginatedStudents.map(student => {
+                  let totalCredits = 0;
+                  let totalGradePoints = 0;
+                  const courseMap = {};
+                  if (Array.isArray(student.courses_info)) {
+                    student.courses_info.forEach(course => {
+                      courseMap[course.code] = course;
+                      totalCredits += Number(course.credit_load);
+                      let gp = 0;
+                      switch (course.grade) {
+                        case 'A': gp = 5; break;
+                        case 'B': gp = 4; break;
+                        case 'C': gp = 3; break;
+                        case 'D': gp = 2; break;
+                        case 'E': gp = 1; break;
+                        case 'F': gp = 0; break;
+                        default: gp = 0;
+                      }
+                      totalGradePoints += gp * Number(course.credit_load);
+                    });
+                  }
+                  const gpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : '0.00';
+                  return (
+                    <TableRow key={student.matric}>
+                      <TableCell>{student.matric}</TableCell>
+                      {allCourses.map(course => (
+                        <TableCell key={course.code} align="center">
+                          {courseMap[course.code] ? `${courseMap[course.code].grade}` : '-'}
+                        </TableCell>
+                      ))}
+                      <TableCell>{gpa}</TableCell>
+                      <TableCell>
+                        <Button variant="outlined" size="small" onClick={() => handleDownloadTranscript(student)}>
+                          Download Transcript
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          );
+        })()}
         <TablePagination
           component="div"
           count={filteredStudents.length}
@@ -323,12 +528,13 @@ export default function ResultUploadPage() {
           rowsPerPageOptions={[10, 25, 50]}
         />
       </Box>
-      {/* Transcript Modal */}
-      <TranscriptModal
-        open={openTranscript}
-        handleClose={() => setOpenTranscript(false)}
-        student={selectedStudent}
-      />
-    </Box>
+    )}
+    {/* Transcript Modal */}
+    <TranscriptModal
+      open={openTranscript}
+      handleClose={() => setOpenTranscript(false)}
+      student={selectedStudent}
+    />
+  </Box>
   );
 }
