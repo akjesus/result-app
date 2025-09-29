@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Drawer,
   List,
@@ -38,10 +40,14 @@ const StudentLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    console.log(localStorage.getItem('token'));
+    toast.info("Logged Out!")
     navigate("/login");
   };
 
   return (
+    <>
+    <ToastContainer/>
     <Box sx={{ display: "flex", width: "100%", minHeight: "100vh", height: "100vh" }}>
       {/* Sidebar toggle button for mobile */}
       <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
@@ -132,6 +138,7 @@ const StudentLayout = () => {
         </Paper>
       </Box>
     </Box>
+    </>
   );
 };
 
