@@ -414,8 +414,11 @@ exports.getCurrentGPA = async (req, res) => {
 
 exports.getallResultsforDepartment = async (req, res) => {
     try {
-        console.log(req.body)
         const departmentId = req.params.id;
+        const { session, semester } = req.query;
+        if (!session || !semester) {
+            return res.status(400).json({ success: false, code: 400, message: "Semester and Session are required!" });
+        }
         const [results] = await db.query(
             `SELECT 
                 students.registration_number as matric,
@@ -435,11 +438,13 @@ exports.getallResultsforDepartment = async (req, res) => {
             JOIN departments ON students.department_id = departments.id
             JOIN results ON students.registration_number = results.registration_number
             JOIN courses ON results.course_id = courses.id
-            JOIN levels ON students.level_id = levels.id
+            JOIN levels ON courses.level_id = levels.id
             WHERE departments.id = ?
+            AND results.session_id = ?
+            AND results.semester_id = ?
             GROUP BY students.registration_number, students.first_name, students.last_name, departments.name, levels.name
             ORDER BY students.registration_number ASC`,
-            [departmentId]
+            [departmentId, session, semester]
         );
         return res.status(200).json({success: true, code: 200, results});
     }

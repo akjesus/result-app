@@ -266,10 +266,12 @@ export default function ResultUploadPage() {
     setSelectedSemester("");
   }, [selectedSession, sessions]);
 
-  // Fetch results only after all dropdowns are selected
-  useEffect(() => {
+  // Manual fetch results handler
+  const [fetching, setFetching] = useState(false);
+  const handleFetchResults = () => {
     if (id && selectedSession && selectedSemester) {
-      getResultsByDepartment(id)
+      setFetching(true);
+      getResultsByDepartment(id, selectedSession, selectedSemester)
         .then(res => {
           // Attach calculated GPA to each student
           const results = (res.data.results || []).map(student => {
@@ -300,11 +302,12 @@ export default function ResultUploadPage() {
         .catch(() => {
           setStudents([]);
           setShowResults(false);
-        });
+        })
+        .finally(() => setFetching(false));
     } else {
       setShowResults(false);
     }
-  }, [id, selectedSession, selectedSemester]);
+  };
 
   // Get all unique levels from students or from API
   const allLevels = levels.length > 0
@@ -314,10 +317,12 @@ export default function ResultUploadPage() {
   const studentsByLevel = allLevels.length > 0
     ? students.filter(s => (s.level || s.Level || s.level_name) === allLevels[levelTab])
     : students;
-  // Filter by GPA range
+  // Filter by GPA range (accurate to 2 decimal places)
   const studentsByGpa = studentsByLevel.filter(student => {
-    let gpa = parseFloat(student.gpa || student.GPA || 0);
-    return gpa >= gpaRange[0] && gpa <= gpaRange[1];
+    let gpa = parseFloat(Number(student.gpa || student.GPA || 0).toFixed(2));
+    const min = parseFloat(gpaRange[0].toFixed(2));
+    const max = parseFloat(gpaRange[1].toFixed(2));
+    return gpa >= min && gpa <= max;
   });
   // Filter students by search (matric or name)
   const filteredStudents = studentsByGpa.filter(student =>
@@ -329,18 +334,15 @@ export default function ResultUploadPage() {
 
   return (
   <Box p={3}>
-    <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+    <Box mb={2}>
       {students.length > 0 && (
         <Typography variant="h5" sx={{ fontWeight: "bold", color: "#2C2C78" }}>
           Department Results: {students[0].department_name}
         </Typography>
       )}
-      <Button variant="contained" color="primary" onClick={handleDownloadAll} startIcon={<Download />}>
-        Download All Transcripts
-      </Button>
     </Box>
-    {/* Dropdowns for session, semester, GPA range */}
-    <Box display="flex" gap={2} mb={2}>
+  {/* Dropdowns for session, semester, GPA range, and fetch button */}
+  <Box display="flex" gap={2} mb={2} alignItems="center">
       <FormControl sx={{ minWidth: 160 }} size="small">
         <InputLabel>Session</InputLabel>
         <Select
@@ -370,20 +372,33 @@ export default function ResultUploadPage() {
       <FormControl sx={{ minWidth: 180 }} size="small">
         <InputLabel>GPA Range</InputLabel>
         <Select
-          value={gpaRange.join('-')}
+          value={gpaRange.map(v => v.toFixed(2)).join('-')}
           label="GPA Range"
           onChange={e => {
             const [min, max] = e.target.value.split('-').map(Number);
             setGpaRange([min, max]);
           }}
+          renderValue={() => {
+            if (gpaRange[0] === 0 && gpaRange[1] === 5) return 'All';
+            return `${gpaRange[0].toFixed(2)} - ${gpaRange[1].toFixed(2)}`;
+          }}
         >
-          <MenuItem value="0-5">All</MenuItem>
-          <MenuItem value="4-5">4.00 - 5.00</MenuItem>
-          <MenuItem value="3-3.99">3.00 - 3.99</MenuItem>
-          <MenuItem value="2-2.99">2.00 - 2.99</MenuItem>
-          <MenuItem value="0-1.99">0.00 - 1.99</MenuItem>
+          <MenuItem value="0.00-5.00">All</MenuItem>
+          <MenuItem value="4.50-5.00">4.50 - 5.00</MenuItem>
+          <MenuItem value="3.50-4.49">3.50 - 4.49</MenuItem>
+          <MenuItem value="2.50-3.49">2.50 - 3.49</MenuItem>
+          <MenuItem value="2.00-2.49">2.00 - 2.49</MenuItem>
+          <MenuItem value="0.00-1.99">0.00 - 1.99</MenuItem>
         </Select>
       </FormControl>
+      <Button
+        variant="contained"
+        sx={{ color: "#2C2C78" }}
+        onClick={handleFetchResults}
+        disabled={fetching || !selectedSession || !selectedSemester}
+      >
+        {fetching ? 'Fetching...' : 'Fetch Results'}
+      </Button>
     </Box>
     {/* Level Tabs */}
     {allLevels.length > 0 && (
@@ -417,9 +432,20 @@ export default function ResultUploadPage() {
     {/* Results Table */}
     {showResults && (
       <Box mt={4}>
-        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-          Results
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            Results
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleDownloadAll}
+            startIcon={<Download />}
+            disabled={!students.length}
+          >
+            Download All Transcripts
+          </Button>
+        </Box>
         {/* Dynamically generate course columns */}
         {(() => {
           let allCourses = [];
@@ -473,7 +499,7 @@ export default function ResultUploadPage() {
                       <TableCell>{student.matric}</TableCell>
                       {allCourses.map(course => (
                         <TableCell key={course.code} align="center">
-                          {courseMap[course.code] ? courseMap[course.code].grade : '-'}
+                          {courseMap[course.code] ? `${courseMap[course.code].grade}` : '-'}
                         </TableCell>
                       ))}
                       <TableCell>{gpa}</TableCell>

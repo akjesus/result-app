@@ -28,4 +28,5 @@ router.delete("/:id", restrictTo("admin"), resultController.deleteResult);
 
 
 
+
 module.exports = router;
