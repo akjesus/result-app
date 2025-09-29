@@ -14,7 +14,7 @@ router.get('/course/:id', restrictTo("admin", "staff"), resultController.getResu
 router.get('/department/:id', restrictTo("admin", "staff"), resultController.getResultsByDepartment);
 router.get('/department/:deptId/level/:levelId', restrictTo("admin", "staff"), resultController.getResultsByDepartmentAndLevel);
 router.get('/cgpa', restrictTo('admin', 'staff'), resultController.calculateAllCGPA);
-router.get('/gpa/:id', restrictTo('admin', 'staff'), resultController.getallGPAforDepartment);
+router.get('/departments/:id', restrictTo('admin', 'staff'), resultController.getallResultsforDepartment);
 
 router.get('/cgpa/highest-lowest', restrictTo('admin', 'staff'), resultController.getHighestandLowestCGPA);
 router.get('/cgpa/:studentId', restrictTo('admin', 'staff', 'student'), resultController.calculateCGPA);

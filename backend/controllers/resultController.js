@@ -412,14 +412,16 @@ exports.getCurrentGPA = async (req, res) => {
     }
 };
 
-exports.getallGPAforDepartment = async (req, res) => {
+exports.getallResultsforDepartment = async (req, res) => {
     try {
+        console.log(req.body)
         const departmentId = req.params.id;
-        const [gpas] = await db.query(
+        const [results] = await db.query(
             `SELECT 
                 students.registration_number as matric,
                 CONCAT(students.first_name, ' ', students.last_name) AS student_name,
                 departments.name AS department_name,
+                levels.name AS level_name,
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
                         'code', courses.code,
@@ -433,12 +435,13 @@ exports.getallGPAforDepartment = async (req, res) => {
             JOIN departments ON students.department_id = departments.id
             JOIN results ON students.registration_number = results.registration_number
             JOIN courses ON results.course_id = courses.id
+            JOIN levels ON students.level_id = levels.id
             WHERE departments.id = ?
-            GROUP BY students.registration_number, students.first_name, students.last_name, departments.name
+            GROUP BY students.registration_number, students.first_name, students.last_name, departments.name, levels.name
             ORDER BY students.registration_number ASC`,
             [departmentId]
         );
-        return res.status(200).json({success: true, code: 200, gpas});
+        return res.status(200).json({success: true, code: 200, results});
     }
     catch (err) {
         return res.status(500).json({ success: false, code: 500, message: err.message });

@@ -62,9 +62,6 @@ exports.createAdmin = async (req, res) => {
     }
   };
 
-//make staff admin
-
-
 
 exports.studentLogin = async (req, res) => {
     try {

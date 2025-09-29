@@ -19,13 +19,14 @@ export const getResults= (semester, department, session, level) => axios.get(API
 );
 
 export const getResultsByDepartment = (departmentId) =>
-  axios.get(`${API_URL}/gpa/${departmentId}`, {
+  axios.get(`${API_URL}/departments/${departmentId}`, {
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     }
   });
 
+  
 
 export const bulkUploadResults = (formData) =>
   axios.post(`${API_URL}/bulk-upload`, formData, {
