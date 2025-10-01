@@ -9,7 +9,6 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  IconButton,
   TablePagination,
   TextField,
   Tabs,
@@ -18,8 +17,13 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Tooltip,
+  IconButton,
+
+
+
 } from "@mui/material";
-import { Edit, Delete, Visibility, Download } from "@mui/icons-material";
+import { Download, Visibility } from "@mui/icons-material";
 import Papa from "papaparse";
 import TranscriptModal from "./TranscriptModal";
 import jsPDF from "jspdf";
@@ -30,20 +34,19 @@ import { getResultsByDepartment } from "../../api/results";
 import { getSessionsWithSemesters, getAllLevels } from "../../api/sessions";
 
 
-export default function ResultUploadPage() {
+export default function TranscriptDisplayPage() {
   const [sessions, setSessions] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [levels, setLevels] = useState([]);
   const [selectedSession, setSelectedSession] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
-  const [gpaRange, setGpaRange] = useState([0, 5]);
   const [showResults, setShowResults] = useState(false);
   const params = useParams();
   const id = params.id || params.departmentId;
   const [file, setFile] = useState(null);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [openTranscript, setOpenTranscript] = useState(false);
+  const [openResult, setOpenResult] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -59,66 +62,10 @@ export default function ResultUploadPage() {
     return { grade: "F", gp: 0 };
   };
 
-  // CSV Upload
-  const handleFileUpload = (e) => {
-    const uploadedFile = e.target.files[0];
-    setFile(uploadedFile);
-
-    Papa.parse(uploadedFile, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const courseCodes = Object.keys(results.data[0]).filter(
-          (col) => col !== "mat_no"
-        );
-
-        const parsed = results.data.map((row, index) => {
-          let totalUnits = 0;
-          let totalPoints = 0;
-
-          const courseResults = courseCodes.map((code) => {
-            const score = Number(row[code]) || 0;
-            const gradeData = getGrade(score);
-            const unit = 3;
-            totalUnits += unit;
-            totalPoints += gradeData.gp * unit;
-
-            return {
-              code,
-              title: code,
-              unit,
-              score,
-              grade: gradeData.grade,
-              gp: gradeData.gp,
-            };
-          });
-
-          const gpa = totalUnits > 0 ? (totalPoints / totalUnits).toFixed(2) : 0;
-
-          return {
-            matNo: row.mat_no,
-            name: `Student ${index + 1}`,
-            faculty: "School of Science",
-            department: "Biochemistry",
-            level: "100",
-            session: "2023/2024",
-            results: courseResults,
-            totalUnits,
-            gpa,
-            cgpa: gpa,
-            comment: gpa < 2 ? "Probation" : "Good Standing",
-          };
-        });
-
-        setStudents(parsed);
-      },
-    });
-  };
-
   // View Transcript
   const handleView = (student) => {
     setSelectedStudent(student);
-    setOpenTranscript(true);
+    setOpenResult(true);
   };
 
   // Bulk Download All Transcripts for current page
@@ -317,15 +264,9 @@ export default function ResultUploadPage() {
   const studentsByLevel = allLevels.length > 0
     ? students.filter(s => (s.level || s.Level || s.level_name) === allLevels[levelTab])
     : students;
-  // Filter by GPA range (accurate to 2 decimal places)
-  const studentsByGpa = studentsByLevel.filter(student => {
-    let gpa = parseFloat(Number(student.gpa || student.GPA || 0).toFixed(2));
-    const min = parseFloat(gpaRange[0].toFixed(2));
-    const max = parseFloat(gpaRange[1].toFixed(2));
-    return gpa >= min && gpa <= max;
-  });
+
   // Filter students by search (matric or name)
-  const filteredStudents = studentsByGpa.filter(student =>
+  const filteredStudents = studentsByLevel.filter(student =>
     (student.matric || student.matNo || '').toLowerCase().includes(search.toLowerCase()) ||
     (student.student_name && student.student_name.toLowerCase().includes(search.toLowerCase()))
   );
@@ -337,7 +278,7 @@ export default function ResultUploadPage() {
     <Box mb={2}>
       {students.length > 0 && (
         <Typography variant="h5" sx={{ fontWeight: "bold", color: "#2C2C78" }}>
-          Department Results: {students[0].department_name}
+          Department Transcripts: {students[0].department_name}
         </Typography>
       )}
     </Box>
@@ -369,35 +310,13 @@ export default function ResultUploadPage() {
           ))}
         </Select>
       </FormControl>
-      <FormControl sx={{ minWidth: 180 }} size="small">
-        <InputLabel>GPA Range</InputLabel>
-        <Select
-          value={gpaRange.map(v => v.toFixed(2)).join('-')}
-          label="GPA Range"
-          onChange={e => {
-            const [min, max] = e.target.value.split('-').map(Number);
-            setGpaRange([min, max]);
-          }}
-          renderValue={() => {
-            if (gpaRange[0] === 0 && gpaRange[1] === 5) return 'All';
-            return `${gpaRange[0].toFixed(2)} - ${gpaRange[1].toFixed(2)}`;
-          }}
-        >
-          <MenuItem value="0.00-5.00">All</MenuItem>
-          <MenuItem value="4.50-5.00">4.50 - 5.00</MenuItem>
-          <MenuItem value="3.50-4.49">3.50 - 4.49</MenuItem>
-          <MenuItem value="2.50-3.49">2.50 - 3.49</MenuItem>
-          <MenuItem value="2.00-2.49">2.00 - 2.49</MenuItem>
-          <MenuItem value="0.00-1.99">0.00 - 1.99</MenuItem>
-        </Select>
-      </FormControl>
       <Button
         variant="contained"
         sx={{ color: "#2C2C78" }}
         onClick={handleFetchResults}
         disabled={fetching || !selectedSession || !selectedSemester}
       >
-        {fetching ? 'Fetching...' : 'Fetch Results'}
+        {fetching ? 'Fetching...' : 'Fetch Transcripts'}
       </Button>
     </Box>
     {/* Level Tabs */}
@@ -432,19 +351,23 @@ export default function ResultUploadPage() {
     {/* Results Table */}
     {showResults && (
       <Box mt={4}>
-        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Box display="flex" alignItems="center" mb={2}>
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            Results
+            Transcripts
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleDownloadAll}
-            startIcon={<Download />}
-            disabled={!students.length}
-          >
-            Download All Transcripts
-          </Button>
+          <Box sx={{ flexGrow: 1 }} />
+          <Box display="flex" justifyContent="flex-end" width="100%">
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Download />}
+              onClick={handleDownloadAll}
+              disabled={!showResults || paginatedStudents.length === 0}
+              sx={{ minWidth: 180 }}
+            >
+              Download All Transcripts
+            </Button>
+          </Box>
         </Box>
         {/* Dynamically generate course columns */}
         {(() => {
@@ -468,7 +391,7 @@ export default function ResultUploadPage() {
                     <TableCell key={course.code} sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{course.code}</TableCell>
                   ))}
                   <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>GPA</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Download</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -504,9 +427,21 @@ export default function ResultUploadPage() {
                       ))}
                       <TableCell>{gpa}</TableCell>
                       <TableCell>
-                        <Button variant="outlined" size="small" onClick={() => handleDownloadTranscript(student)}>
-                          Download Transcript
-                        </Button>
+                        {/* Use MUI IconButton and Tooltip for View action */}
+                        <Box display="flex" gap={1}>
+                          <Tooltip title="View Transcript">
+                            <IconButton color="primary" size="small" onClick={() => { setSelectedStudent(student); setOpenResult(true); }}>
+                              <Visibility />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Download Transcript">
+                            <IconButton color="primary" size="small" onClick={() => { handleDownloadTranscript(student); }}>
+                              <Download />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right" sx={{ position: 'sticky', right: 0, background: '#fff', zIndex: 1 }}>
                       </TableCell>
                     </TableRow>
                   );
@@ -531,8 +466,8 @@ export default function ResultUploadPage() {
     )}
     {/* Transcript Modal */}
     <TranscriptModal
-      open={openTranscript}
-      handleClose={() => setOpenTranscript(false)}
+      open={openResult}
+      handleClose={() => setOpenResult(false)}
       student={selectedStudent}
     />
   </Box>

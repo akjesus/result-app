@@ -25,5 +25,6 @@ router.post("/:id/reset-password", studentController.resetPassword);
 router.put("/:id",  studentController.updateUser);
 router.delete("/:id",  studentController.deleteUser);
 router.post("/:id/block",  studentController.blockUser);
+router.get('/departments/:departmentId', studentController.getStudentsByDepartment);
 
 module.exports = router;

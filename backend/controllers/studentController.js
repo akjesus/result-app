@@ -333,3 +333,17 @@ exports.getMyProfile = async (req, res) => {
 
 }
 
+
+exports.getStudentsByDepartment = async (req, res) => {
+  const departmentId = parseInt(req.params.departmentId);
+    try { 
+        const [students] = await db.query(`
+          SELECT id, concat(first_name, ' ', last_name) as name, registration_number as matric
+          FROM students 
+          WHERE department_id = ?`, [departmentId]);
+        return res.status(200).json({success: true, code: 200, students});
+    } catch (error) {
+        console.log('Error fetching students by department:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};

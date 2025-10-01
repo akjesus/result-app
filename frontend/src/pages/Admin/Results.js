@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { getDepartments } from "../../api/departments";
-import { getCoursesWithResults } from "../../api/schools";
+import { getCoursesWithResults, getCourses } from "../../api/schools";
+import { getStudentsForDepartment } from "../../api/students";
+import { getSessionsWithSemesters } from "../../api/sessions";
+import {createResult} from "../../api/results";
 import {
   Box,
   Typography,
@@ -19,13 +22,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  MenuItem,
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UploadResultsModal from "./UploadResultsModal";
-import AdminCourses from "./Courses";
 
 export default function ResultManagement() {
   const [search, setSearch] = useState("");
@@ -34,31 +37,121 @@ export default function ResultManagement() {
   const [departments, setDepartments] = useState([]);
   const [coursesWithResults, setCoursesWithResults] = useState([]);
   const [openUploadModal, setOpenUploadModal] = useState(false);
-  const [showCoursesWithResults, setShowCoursesWithResults] = useState(false);
+  const [openCreateResultModal, setOpenCreateResultModal] = useState(false);
+  const [modalDepartments, setModalDepartments] = useState([]);
+  const [modalStudents, setModalStudents] = useState([]);
+  const [modalCourses, setModalCourses] = useState([]);
+  const [modalSessions, setModalSessions] = useState([]);
+  const [modalSemesters, setModalSemesters] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedSession, setSelectedSession] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const [catScore, setCatScore] = useState("");
+  const [examScore, setExamScore] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     getDepartments()
       .then(res => {
         setDepartments(res.data.departments);
+        setModalDepartments(res.data.departments);
       })
       .catch(err => console.error(err));
   }, []);
 
-  // Fetch courses with uploaded results from backend
-  useEffect(() => {
-    getCoursesWithResults()
-      .then(res => {
-        setCoursesWithResults(res.data.courses);
-      })
-      .catch(err => console.error(err));
-  }, []);
 
   const filteredDepartments = departments.filter(
     (departments) =>
       departments.name.toLowerCase().includes(search.toLowerCase())
       || departments.school.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleCreateResult = () => {
+    const data = {
+      registration_number: selectedStudent,
+      course_id: selectedCourse,
+      session_id: selectedSession,
+      semester_id: selectedSemester,
+      cat_score: catScore,
+      exam_score: examScore,
+    }
+    createResult(data)
+    .then(res => {
+      if(res.data.success) {
+        toast.success("Result Created Successfully!");
+        handleCloseModal()
+      }
+      else {
+        toast.info("There was an error!");
+        handleCloseModal()
+      }
+
+    })
+    .catch(err => {
+      toast.error(err.response.data.message);
+       handleCloseModal()
+    })
+  }
+
+  const handleCloseModal = ()=> {
+    setSelectedDepartment("");
+      setSelectedStudent("");
+      setSelectedCourse("");
+      setSelectedSession("");
+      setSelectedSemester("");
+      setModalStudents([]);
+      setModalCourses([]);
+      setModalSemesters([]);
+      setCatScore("");
+      setExamScore("");
+      setOpenCreateResultModal(false);
+  }
+
+  useEffect(() => {
+    if (openCreateResultModal) {
+      getDepartments()
+        .then(res => setModalDepartments(res.data.departments || []))
+        .catch(() => setModalDepartments([]));
+      getSessionsWithSemesters()
+        .then(res => setModalSessions(res.data.sessions || []))
+        .catch(() => setModalSessions([]));
+      handleCloseModal()
+    }
+  }, [openCreateResultModal]);
+
+  useEffect(() => {
+    if (selectedSession) {
+      const found = modalSessions.find(s => s.id === selectedSession || s.id === Number(selectedSession));
+      setModalSemesters(found ? found.semesters : []);
+    } else {
+      setModalSemesters([]);
+    }
+    setSelectedSemester("");
+  }, [selectedSession, modalSessions]);
+
+  useEffect(() => {
+    if (selectedDepartment) {
+      getStudentsForDepartment(selectedDepartment)
+        .then(res => {
+          setModalStudents(res.data.students || []);
+        })
+        .catch(() => setModalStudents([]));
+      setSelectedStudent("");
+      setSelectedCourse("");
+      setModalCourses([]);
+    }
+  }, [selectedDepartment]);
+
+  useEffect(() => {
+    if (selectedStudent) {
+      getCourses()
+        .then(res => setModalCourses(res.data.courses || []))
+        .catch(() => setModalCourses([]));
+      setSelectedCourse("");
+    }
+  }, [selectedStudent]);
 
   return (
     <>
@@ -70,49 +163,9 @@ export default function ResultManagement() {
       </Typography>
       {/* Quick Navigation Buttons */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
-        <Button
-          variant="contained"
-          sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }}
-          onClick={() => navigate("/admin/results")}
-        >
-          Results
-        </Button>
-        <Button variant="outlined" sx={{ minWidth: { xs: 120, sm: 150 } }} onClick={() => navigate("/admin/probation")}>Probation List</Button>
+        <Button variant="contained" sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }} onClick={() => setOpenCreateResultModal(true)}>Add Result</Button>
         <Button variant="contained" sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }} onClick={() => setOpenUploadModal(true)}>Upload Results</Button>
-        <Button variant="contained" sx={{ bgcolor: "#2C2C78", minWidth: { xs: 120, sm: 150 } }} onClick={() => setShowCoursesWithResults(true)}>Uploaded Results</Button>
       </Box>
-      {/* Dialog Tab for Courses With Results */}
-      <Dialog open={showCoursesWithResults} onClose={() => setShowCoursesWithResults(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>Courses With Uploaded Results</DialogTitle>
-        <DialogContent>
-          <Table sx={{ minWidth: 320 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Course Code</TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Course Title</TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Session</TableCell>
-                <TableCell sx={{ fontWeight: "bold", fontSize: { xs: 13, sm: 16 } }}>Semester</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {coursesWithResults.length > 0
-                ? coursesWithResults.map((course, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.code}</TableCell>
-                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.name}</TableCell>
-                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.session}</TableCell>
-                      <TableCell sx={{ fontSize: { xs: 12, sm: 15 } }}>{course.semester}</TableCell>
-                    </TableRow>
-                  ))
-                : (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center">No courses with uploaded results found.</TableCell>
-                    </TableRow>
-                  )}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
       {/* Search */}
       <TextField
         label="Search by Department or Faculty"
@@ -196,6 +249,123 @@ export default function ResultManagement() {
       </Paper>
       {/* Upload Results Modal */}
       <UploadResultsModal open={openUploadModal} handleClose={() => setOpenUploadModal(false)} />
+      {/* Create Result Modal */}
+      <Dialog open={openCreateResultModal} onClose={() => setOpenCreateResultModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Result</DialogTitle>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            {/* Department Dropdown */}
+            <TextField
+              select
+              label="Department"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={selectedDepartment}
+              onChange={e => setSelectedDepartment(e.target.value)}
+            >
+              <MenuItem value="">Select Department</MenuItem>
+              {modalDepartments.map(dep => (
+                <MenuItem key={dep.id || dep._id} value={dep.id || dep._id}>{dep.name}</MenuItem>
+              ))}
+            </TextField>
+            {/* Student Dropdown */}
+            <TextField
+              select
+              label="Student"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={selectedStudent}
+              onChange={e => setSelectedStudent(e.target.value)}
+              disabled={!selectedDepartment}
+            >
+              <MenuItem value="">Select Student</MenuItem>
+              {modalStudents.map(stu => (
+                <MenuItem key={stu.id || stu._id} value={stu.matric}>  {stu.matric + " - " + stu.name }</MenuItem>
+              ))}
+            </TextField>
+            {/* Course Dropdown */}
+            <TextField
+              select
+              label="Course"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={selectedCourse}
+              onChange={e => setSelectedCourse(e.target.value)}
+              disabled={!selectedStudent}
+            >
+              <MenuItem value="">Select Course</MenuItem>
+              {modalCourses.map(course => (
+                <MenuItem key={course.id } value={course.id }>{course.name || course.title || course.code}</MenuItem>
+              ))}
+            </TextField>
+            {/* Session & Semester Row */}
+            <Box display="flex" gap={2}>
+              <TextField
+                select
+                label="Session"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={selectedSession}
+                onChange={e => setSelectedSession(e.target.value)}
+                sx={{ flex: 1 }}
+              >
+                <MenuItem value="">Select Session</MenuItem>
+                {modalSessions.map(session => (
+                  <MenuItem key={session.id} value={session.id}>{session.name}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="Semester"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={selectedSemester}
+                onChange={e => setSelectedSemester(e.target.value)}
+                disabled={!selectedSession}
+                sx={{ flex: 1 }}
+              >
+                <MenuItem value="">Select Semester</MenuItem>
+                {modalSemesters.map(sem => (
+                  <MenuItem key={sem.id} value={sem.id}>{sem.name}</MenuItem>
+                ))}
+              </TextField>
+            </Box>
+            {/* CAT & Exam Score Row */}
+            <Box display="flex" gap={2}>
+              <TextField
+                label="CAT Score"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={catScore}
+                onChange={e => setCatScore(e.target.value)}
+                type="number"
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Exam Score"
+                variant="outlined"
+                size="small"
+                fullWidth
+                value={examScore}
+                onChange={e => setExamScore(e.target.value)}
+                type="number"
+                sx={{ flex: 1 }}
+              />
+            </Box>
+            {/* Add more fields as needed */}
+            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+              <Button onClick={() => setOpenCreateResultModal(false)} color="secondary">Cancel</Button>
+              <Button variant="contained" color="primary" onClick={handleCreateResult}>Create Result</Button>
+            </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
     </>
   );

@@ -11,6 +11,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Typography
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 
@@ -58,8 +59,10 @@ export default function Grades() {
   };
 
   return (
-    <Box p={3}>
-      <h2>Grades Management</h2>
+    <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
+      Grades Management
+      </Typography>
       <Box display="flex" gap={2} mb={2}>
         <TextField label="Lower Limit" name="lower" value={form.lower} onChange={handleChange} />
         <TextField label="Upper Limit" name="upper" value={form.upper} onChange={handleChange} />

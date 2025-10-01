@@ -14,8 +14,9 @@ import AdminGrades from "../pages/Admin/Grades";
 import AdminSettings from "../pages/Admin/Settings";
 import AdminLayout from "../components/AdminLayout";
 import Probation from "../pages/Admin/Probation";
-import ResultUploadPage from "../pages/Admin/ResultUploadPage";
-import DepartmentResults from "../pages/Admin/DepartmentResults";
+import ResultUploadPage from "../pages/Admin/ResultsDisplayPage";
+import TranscriptDisplayPage from "../pages/Admin/TranscriptDisplayPage";
+import Transcripts from "../pages/Admin/Transcripts";
 
 // Student Pages
 import StudentDashboard from "../pages/Student/Dashboard";
@@ -47,10 +48,12 @@ const AppRouter = () => (
         <Route path="departments" element={<AdminDepartments />} />
         <Route path="schools" element={<AdminSchools />} />
         <Route path="results" element={<AdminResults />} />
+        <Route path="transcripts" element={<Transcripts />} />
         <Route path="grades" element={<AdminGrades />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="probation" element={<Probation />} />
         <Route path="/admin/results/:departmentId" element={<ResultUploadPage />} />
+        <Route path="/admin/transcripts/:departmentId" element={<TranscriptDisplayPage />} />
         <Route path="results/:id" element={<ResultUploadPage />} />
       </Route>
 

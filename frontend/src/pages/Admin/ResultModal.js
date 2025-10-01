@@ -22,9 +22,50 @@ import {updateResults} from "../../api/results";
 import { toast, ToastContainer } from "react-toastify";
 
 // Function to handle save after editing
+function handleSaveEdit(editStudent, onSave) {
+  // Log the edited data for analysis
+  const editedResults = editStudent.courses_info;
+  console.log(editedResults);
+  if (onSave) {
+    onSave(editStudent);
+  }
+  //send the data to endpoint 
+  updateResults(editedResults)
+    .then(res => {
+      if (res.data.success) { 
+        toast.success("Results updated successfully");
+      } else {
+        toast.error(res.data.message || "Failed to update results");
+        console.log(res.data);
+      }
+    })
+    .catch(err => {
+      toast.error(err.response.data.message   || "Error updating results");
+      console.log(err.response.data);
+    });
 
-export default function ResultModal({ open, handleClose, student}) {
+}
 
+export default function ResultModal({ open, handleClose, student, editMode = false, onSave }) {
+  const [editStudent, setEditStudent] = React.useState(
+    student ? {
+      ...student,
+      results: Array.isArray(student.results) ? student.results : [],
+      courses_info: Array.isArray(student.courses_info) ? student.courses_info : [],
+    } : { results: [], courses_info: [] }
+  );
+  React.useEffect(() => {
+    if (!student) {
+      setEditStudent({ results: [], courses_info: [] });
+      return;
+    }
+    setEditStudent({
+      ...student,
+      results: Array.isArray(student.results) ? student.results : [],
+      courses_info: Array.isArray(student.courses_info) ? student.courses_info : [],
+    });
+  }, [student]);
+  if (!student) return null;
 
   // Support both shapes for student info
   const name = student.name || student.student_name || '';
@@ -45,7 +86,7 @@ export default function ResultModal({ open, handleClose, student}) {
     doc.setFontSize(18);
     doc.text("Maduka University, Ekwegbe", 45, 25);
     doc.setFontSize(16);
-    doc.text("Student Transcript", 14, 45);
+    doc.text("Student Result", 14, 45);
     doc.setFontSize(12);
     doc.text(`Name: ${name}`, 14, 60);
     doc.text(`Matric No: ${matric}`, 14, 67);
@@ -107,7 +148,7 @@ export default function ResultModal({ open, handleClose, student}) {
       <ToastContainer />
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: "bold", color: "#2C2C78" }}>
-        {'Student Transcript'}
+        {editMode ? 'Edit Student Result' : 'Student Result'}
       </DialogTitle>
       <DialogContent dividers>
         {/* Editable Student Info */}
@@ -136,13 +177,23 @@ export default function ResultModal({ open, handleClose, student}) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {( (results || [])).map((r, index) => (
+              {(editMode ? (editStudent?.results || []) : (results || [])).map((r, index) => (
                 <TableRow key={index}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>{r.code}</TableCell>
                   <TableCell>{r.title}</TableCell>
                   <TableCell>{r.unit}</TableCell>
-                  <TableCell>{r.score}</TableCell>
+                  <TableCell>
+                    {editMode ? (
+                      <TextField value={r.score} size="small" type="number" onChange={e => {
+                        const val = e.target.value;
+                        setEditStudent(s => ({
+                          ...s,
+                          results: (s.results || []).map((rr, i) => i === index ? { ...rr, score: val } : rr)
+                        }));
+                      }} />
+                    ) : r.score}
+                  </TableCell>
                   <TableCell>{r.grade}</TableCell>
                   <TableCell>{r.gp}</TableCell>
                 </TableRow>
@@ -162,18 +213,42 @@ export default function ResultModal({ open, handleClose, student}) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {((courses || [])).map((course, index) => (
+              {(editMode ? (editStudent?.courses_info || []) : (courses || [])).map((course, index) => (
                 <TableRow key={index}>
                   <TableCell>{courses[index]?.code}</TableCell>
                   <TableCell>{courses[index]?.name}</TableCell>
                   <TableCell>
-                    {(course.cat_score || '')}
+                    {editMode ? (
+                      <TextField value={course.cat_score || ''} size="small" type="number" onChange={e => {
+                        const val = e.target.value;
+                        setEditStudent(s => ({
+                          ...s,
+                          courses_info: (s.courses_info || []).map((cc, i) => i === index ? { ...cc, cat_score: val } : cc)
+                        }));
+                      }} />
+                    ) : (course.cat_score || '')}
                   </TableCell>
                   <TableCell>
-                    {(course.exam_score || '')}
+                    {editMode ? (
+                      <TextField value={course.exam_score || ''} size="small" type="number" onChange={e => {
+                        const val = e.target.value;
+                        setEditStudent(s => ({
+                          ...s,
+                          courses_info: (s.courses_info || []).map((cc, i) => i === index ? { ...cc, exam_score: val } : cc)
+                        }));
+                      }} />
+                    ) : (course.exam_score || '')}
                   </TableCell>
                   <TableCell>
-                    {course.grade}
+                    {editMode ? (
+                      <TextField value={course.grade} size="small" onChange={e => {
+                        const val = e.target.value;
+                        setEditStudent(s => ({
+                          ...s,
+                          courses_info: (s.courses_info || []).map((cc, i) => i === index ? { ...cc, grade: val } : cc)
+                        }));
+                      }} />
+                    ) : course.grade}
                   </TableCell>
                 </TableRow>
               ))}
@@ -191,13 +266,23 @@ export default function ResultModal({ open, handleClose, student}) {
         </Box>
       </DialogContent>
       <DialogActions>
+        {editMode ? (
+          <Button
+            onClick={() => handleSaveEdit(editStudent, onSave)}
+            variant="contained"
+            sx={{ bgcolor: "#2C2C78" }}
+          >
+            Save
+          </Button>
+        ) : (
           <Button
             onClick={handleDownloadPDF}
             variant="contained"
             sx={{ bgcolor: "#2C2C78" }}
           >
-            Download Transcript
+            Download PDF
           </Button>
+        )}
         <Button onClick={handleClose} sx={{ color: "#2C2C78" }}>
           Close
         </Button>

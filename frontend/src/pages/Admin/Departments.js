@@ -131,9 +131,10 @@ export default function DepartmentsPage() {
   return (
     <>
     <ToastContainer />
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}><strong>Departments</strong></Typography>
-
+    <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
+          Manage Departments
+          </Typography>
       {/* Search + Add Button Container */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <TextField

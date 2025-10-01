@@ -70,7 +70,6 @@ exports.getAllResults = async (req, res) => {
     }
 };
 
-
 // Get a single result by ID
 exports.getResultById = async (req, res) => {
     const resultId = parseInt(req.params.id);
@@ -87,9 +86,9 @@ exports.getResultById = async (req, res) => {
 };
 
 exports.createResult = async (req, res) => {
-    const { registration_number, course_id, cat_score, exam_score, semester_id, session_id } = req.body;
+    const { registration_number, course_id, cat_score, exam_score, semester_id, session_id } = req.body.results;
     //validate inputs
-    if (!registration_number || !course_id || cat_score == null || exam_score == null || !semester_id || !session_id ) {
+    if (!registration_number || !course_id || !cat_score  || !exam_score  || !semester_id || !session_id ) {
         return res.status(400).json({ success: false, code: 400, message: "All fields are required!" });
     }
 
@@ -425,23 +424,33 @@ exports.getallResultsforDepartment = async (req, res) => {
                 CONCAT(students.first_name, ' ', students.last_name) AS student_name,
                 departments.name AS department_name,
                 levels.name AS level_name,
+                sessions.name AS session_name,
+                semesters.name AS semester_name,
+                faculties.name AS faculty_name,
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
+                        'id', results.id,
                         'code', courses.code,
                         'name', courses.name,
                         'grade', results.grade,
+                        'cat_score', results.cat_score,
+                        'exam_score', results.exam_score,
                         'total_score', results.cat_score + results.exam_score,
                         'credit_load', courses.credit_load
                     )
                 ) AS courses_info
             FROM students
             JOIN departments ON students.department_id = departments.id
+            JOIN faculties ON departments.faculty_id = faculties.id
             JOIN results ON students.registration_number = results.registration_number
             JOIN courses ON results.course_id = courses.id
             JOIN levels ON courses.level_id = levels.id
+            JOIN sessions ON results.session_id = sessions.id
+            JOIN semesters ON results.semester_id = semesters.id
             WHERE departments.id = ?
             AND results.session_id = ?
             AND results.semester_id = ?
+            AND results.blocked = 0
             GROUP BY students.registration_number, students.first_name, students.last_name, departments.name, levels.name
             ORDER BY students.registration_number ASC`,
             [departmentId, session, semester]
@@ -449,6 +458,7 @@ exports.getallResultsforDepartment = async (req, res) => {
         return res.status(200).json({success: true, code: 200, results});
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json({ success: false, code: 500, message: err.message });
     }
 }
@@ -459,5 +469,26 @@ exports.getCoursesWithResults = async (req, res) => {
         return res.status(200).json({success: true, code: 200, courses});
     } catch (err) {
         return res.status(500).json({success: false, code: 500, message: err.message });
+    }
+};
+
+
+exports.batchUpdateResults = async (req, res) => {
+    const updates = req.body.results;
+    if (!Array.isArray(updates) || updates.length === 0) {
+        return res.status(400).json({ success: false, code: 400, message: "Updates array is required!" });
+    }
+    try {
+        let updatedCount = 0;
+        for (const update of updates) {
+            const { id, cat_score, exam_score, grade } = update;
+            const updated = await Result.updateResult(cat_score, exam_score, grade, id);   
+            if (updated) updatedCount++;
+        }
+        return res.status(200).json({ success: true, code: 200, message: `${updatedCount} results updated successfully` });
+    }
+    catch (error) {
+        console.log('Error batch updating results:', error.message);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };

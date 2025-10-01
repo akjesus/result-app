@@ -173,9 +173,13 @@ export default function AdminStudents() {
   );
 
   return (
-    <Box>
-      <Typography variant="h5" gutterBottom>Manage Students</Typography>
-        <ToastContainer />
+    <>
+    <ToastContainer />
+        <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
+          Manage Students
+          </Typography>
+        
 
       {/* Add / Bulk Upload / Download */}
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -313,5 +317,6 @@ export default function AdminStudents() {
         </DialogActions>
       </Dialog>
     </Box>
+    </>
   );
 }
