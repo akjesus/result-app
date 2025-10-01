@@ -36,7 +36,7 @@ export const bulkUploadResults = (formData) =>
     }
   });
 
-  export const getResultsByDepartment = (id, session, semester) => 
+export const getResultsByDepartment = (id, session, semester) => 
     axios.get(`${API_URL}/departments/${id}`,
         {
             params: {
@@ -49,3 +49,25 @@ export const bulkUploadResults = (formData) =>
             }
         }
 );
+
+
+export const updateResults = (data) =>
+  axios.put(`${API_URL}/batch-update`,{
+    results: data,
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+export const createResult = (data) => {
+  return axios.post(API_URL, {
+    results: data,
+  }, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
+};

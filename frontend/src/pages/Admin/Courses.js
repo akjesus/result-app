@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { getCourses, createCourse, getLevels, updateCourse } from "../../api/schools";
+import { getCourses, createCourse, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -25,9 +25,6 @@ import {
   Select,
   InputLabel,
   FormControl,
-  OutlinedInput,
-  Checkbox,
-  ListItemText,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 
@@ -182,10 +179,10 @@ export default function AdminCourses() {
   return (
     <>
       <ToastContainer />
-      <Box>
-        <Typography variant="h5" gutterBottom>
-          Manage Courses
-        </Typography>
+      <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
+            Manage Courses 
+            </Typography>
 
         {/* Add Course Button & Search Box */}
         <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>

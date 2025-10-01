@@ -35,6 +35,7 @@ const menuItems = [
   { text: "Departments", icon: <Apartment />, path: "/admin/departments" },
   { text: "Schools", icon: <School />, path: "/admin/schools" },
   { text: "Results", icon: <BarChart />, path: "/admin/results" },
+  { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
   { text: "Grades", icon: <Grade />, path: "/admin/grades" },
   { text: "Settings", icon: <Settings />, path: "/admin/settings" },
 ];

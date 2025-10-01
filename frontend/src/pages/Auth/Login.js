@@ -39,15 +39,15 @@ function Login() {
         localStorage.setItem("role", res.data.role);
 
         // Redirect based on role
-        if (res.data.role === "admin" || res.data.role === "superadmin") {
+        if (res.data.role === "admin") {
           toast.success(res.data.message);
-          setTimeout(() => {navigate("/admin/dashboard")}, 2000);
+          setTimeout(() => {navigate("/admin/dashboard")}, 1500);
         } else if (res.data.role === "student") {
           toast.success(res.data.message);
-          setTimeout(() => {navigate("/student/dashboard")}, 2000);
+          setTimeout(() => {navigate("/student/dashboard")}, 1500);
         } else {
           toast.error(res.data.message)
-          setTimeout(() => {navigate("/")}, 2000);
+          setTimeout(() => {navigate("/")}, 1500);
           // fallback
         }
       }

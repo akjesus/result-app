@@ -12,6 +12,13 @@ export const getStudents = () => axios.get(API_URL, {
          'Authorization': `Bearer ${token}` 
           }
 });
+
+export const getStudentsForDepartment = (id) => axios.get(`${API_URL}/departments/${id}`, {
+    headers: {
+          'Content-Type': 'application/json',
+         'Authorization': `Bearer ${token}` 
+          }
+});
 export const createStudent = (data) => axios.post(API_URL, data, {
     
     headers: {

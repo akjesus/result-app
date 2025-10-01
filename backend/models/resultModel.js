@@ -47,11 +47,12 @@ class Result {
     return rows;
   }
   
-  static async updateResult(resultId, registration_number, course_id, score, grade, semester_id, level_id) {
+  static async updateResult(cat_score, exam_score, grade, id) {
     const [result] = await db.query(
       `UPDATE results 
-       SET registration_number = ?, course_id = ?, score = ?, grade = ?, semester_id = ?, level_id = ? WHERE id = ?`,    
-            [registration_number, course_id, score, grade, semester_id, level_id, resultId]
+       SET cat_score = ?, exam_score = ?, grade = ?
+       WHERE id = ?`,    
+            [cat_score, exam_score, grade, id]
     );
     return result.affectedRows > 0;
   }

@@ -78,9 +78,9 @@ export default function AdminDashboard() {
   return (
     <>
     <ToastContainer />
-    <Box sx={{ p: { xs: 1, sm: 2 }, maxWidth: 900, mx: "auto" }}>
-      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: 18, sm: 24 } }}>
-        Admin Dashboard
+    <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
+      Admin Dashboard
       </Typography>
       {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 2 }}>

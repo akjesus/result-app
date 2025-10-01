@@ -15,7 +15,7 @@ router.get('/department/:id', restrictTo("admin", "staff"), resultController.get
 router.get('/department/:deptId/level/:levelId', restrictTo("admin", "staff"), resultController.getResultsByDepartmentAndLevel);
 router.get('/cgpa', restrictTo('admin', 'staff'), resultController.calculateAllCGPA);
 router.get('/departments/:id', restrictTo('admin', 'staff'), resultController.getallResultsforDepartment);
-
+router.put("/batch-update", restrictTo("admin"), resultController.batchUpdateResults);
 router.get('/cgpa/highest-lowest', restrictTo('admin', 'staff'), resultController.getHighestandLowestCGPA);
 router.get('/cgpa/:studentId', restrictTo('admin', 'staff', 'student'), resultController.calculateCGPA);
 router.post("/bulk-upload", restrictTo("admin"), resultController.bulkUploadResults);
