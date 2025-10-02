@@ -19,12 +19,8 @@ import {
   InputLabel,
   Tooltip,
   IconButton,
-
-
-
 } from "@mui/material";
 import { Download, Visibility } from "@mui/icons-material";
-import Papa from "papaparse";
 import TranscriptModal from "./TranscriptModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -43,7 +39,6 @@ export default function TranscriptDisplayPage() {
   const [showResults, setShowResults] = useState(false);
   const params = useParams();
   const id = params.id || params.departmentId;
-  const [file, setFile] = useState(null);
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openResult, setOpenResult] = useState(false);
@@ -60,12 +55,6 @@ export default function TranscriptDisplayPage() {
     if (score >= 45) return { grade: "D", gp: 2 };
     if (score >= 40) return { grade: "E", gp: 1 };
     return { grade: "F", gp: 0 };
-  };
-
-  // View Transcript
-  const handleView = (student) => {
-    setSelectedStudent(student);
-    setOpenResult(true);
   };
 
   // Bulk Download All Transcripts for current page

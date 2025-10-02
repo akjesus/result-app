@@ -35,7 +35,6 @@ export default function ResultManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [departments, setDepartments] = useState([]);
-  const [coursesWithResults, setCoursesWithResults] = useState([]);
   const [openUploadModal, setOpenUploadModal] = useState(false);
   const [openCreateResultModal, setOpenCreateResultModal] = useState(false);
   const [modalDepartments, setModalDepartments] = useState([]);

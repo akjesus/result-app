@@ -105,7 +105,7 @@ export default function DepartmentsPage() {
           fetchDepartments();
           showSnackbar("Department deleted successfully!", "success");
         })
-        .catch(err => showSnackbar("Failed to delete department", "error"));
+        .catch(err => showSnackbar("Failed to delete department", err.message || "error"));
     }
   }
 

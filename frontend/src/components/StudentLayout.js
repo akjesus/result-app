@@ -40,7 +40,6 @@ const StudentLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    console.log(localStorage.getItem('token'));
     toast.info("Logged Out!")
     navigate("/login");
   };

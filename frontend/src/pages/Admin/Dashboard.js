@@ -109,7 +109,7 @@ export default function AdminDashboard() {
       {/* Charts Section */}
       <Grid container spacing={2} sx={{ mt: 2 }}>
         {/* Department Performance */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card sx={{ borderRadius: 2, mb: { xs: 2, md: 0 } }}>
             <CardContent>
               <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold", fontSize: { xs: 15, sm: 18 } }}>

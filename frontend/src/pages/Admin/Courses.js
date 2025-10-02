@@ -43,7 +43,6 @@ export default function AdminCourses() {
         active: newCourse.active,
         semester: newCourse.semester,
       };
-      console.log(payload);
       const res = await createCourse(payload);
       if (res.data.success) {
         toast.success("Course created successfully!");
@@ -104,7 +103,7 @@ export default function AdminCourses() {
 
   // Pagination
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Open modal for Add/Edit
   const handleOpen = (course = null, index = null) => {
