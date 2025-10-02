@@ -11,23 +11,33 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Tooltip,
-  TextField,
   Box,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
-import {updateResults} from "../../api/results";
 import { toast, ToastContainer } from "react-toastify";
 
 // Function to handle save after editing
 
 export default function ResultModal({ open, handleClose, student}) {
-
+  if (!student) {
+    return (
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Transcript</DialogTitle>
+        <DialogContent>
+          <Typography color="error">No student data available.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   // Support both shapes for student info
-  const name = student.name || student.student_name || '';
+  console.log(student)
+  const name = student.first_name || student.student_name || '';
   const matric = student.matNo || student.matric || '';
   const faculty = student.faculty || student.faculty_name || '';
   const department = student.department || student.department_name || '';
@@ -156,8 +166,8 @@ export default function ResultModal({ open, handleClose, student}) {
               <TableRow>
                 <TableCell>Course Code</TableCell>
                 <TableCell>Course Name</TableCell>
-                <TableCell>CAT Score</TableCell>
-                <TableCell>Exam Score</TableCell>
+                <TableCell>Credit Unit</TableCell>
+                <TableCell>Score</TableCell>
                 <TableCell>Grade</TableCell>
               </TableRow>
             </TableHead>
@@ -167,10 +177,10 @@ export default function ResultModal({ open, handleClose, student}) {
                   <TableCell>{courses[index]?.code}</TableCell>
                   <TableCell>{courses[index]?.name}</TableCell>
                   <TableCell>
-                    {(course.cat_score || '')}
+                    {(course.credit_load || '')}
                   </TableCell>
                   <TableCell>
-                    {(course.exam_score || '')}
+                    {(course.total_score || '')}
                   </TableCell>
                   <TableCell>
                     {course.grade}
