@@ -243,7 +243,7 @@ exports.getResultsByStudent = async (req, res) => {
         if(results.length === 0) {
             return res.status(200).json({ success: true, code: 404, message: `No results for this semester and session yet` });
         }
-        return res.status(200).json({success: true, code: 200,results});
+        return res.status(200).json({success: true, code: 200, results, student: userDetails});
     } catch (err) {
         console.log(err)
         return res.status(500).json({ success: false, code: 500, message: err.message });

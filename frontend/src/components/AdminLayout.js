@@ -21,7 +21,8 @@ import {
   Grade,
   Settings,Logout,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  PeopleOutline
 } from "@mui/icons-material";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -36,6 +37,7 @@ const menuItems = [
   { text: "Schools", icon: <School />, path: "/admin/schools" },
   { text: "Results", icon: <BarChart />, path: "/admin/results" },
   { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
+  { text: "Staff", icon: <PeopleOutline />, path: "/admin/staff" },
   { text: "Grades", icon: <Grade />, path: "/admin/grades" },
   { text: "Settings", icon: <Settings />, path: "/admin/settings" },
 ];

@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
 import { toast, ToastContainer } from "react-toastify";
+import exoFont from "../../assets/exo.ttf"; 
 
 // Function to handle save after editing
 
@@ -36,7 +37,6 @@ export default function ResultModal({ open, handleClose, student}) {
   }
 
   // Support both shapes for student info
-  console.log(student)
   const name = student.first_name || student.student_name || '';
   const matric = student.matNo || student.matric || '';
   const faculty = student.faculty || student.faculty_name || '';
@@ -51,6 +51,9 @@ export default function ResultModal({ open, handleClose, student}) {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
+    doc.addFileToVFS("MyFont.ttf", exoFont);
+    doc.addFont("MyFont.ttf", "MyFont", "normal");
+    doc.setFont("MyFont");
     doc.addImage(logo, "PNG", 14, 10, 25, 25);
     doc.setFontSize(18);
     doc.text("Maduka University, Ekwegbe", 45, 25);
@@ -60,6 +63,10 @@ export default function ResultModal({ open, handleClose, student}) {
     doc.text(`Name: ${name}`, 14, 60);
     doc.text(`Matric No: ${matric}`, 14, 67);
     doc.text(`Department: ${department}`, 14, 74);
+    doc.text(`Faculty: ${faculty}`, 14, 81);
+    doc.text(`Level: ${level}`, 14, 88);
+    doc.text(`Session: ${session}`, 14, 95);
+    doc.text(`Semester: ${semester}`, 14, 102);
     // Table columns and rows
     let tableColumn, tableRows;
     if (results) {
@@ -71,7 +78,7 @@ export default function ResultModal({ open, handleClose, student}) {
     }
     if (tableColumn && tableRows) {
       autoTable(doc, {
-        startY: 85,
+        startY: 110,
         head: [tableColumn],
         body: tableRows,
       });
@@ -109,7 +116,8 @@ export default function ResultModal({ open, handleClose, student}) {
     doc.setFontSize(12);
     doc.text("Registrar's Signature:", 14, finalY + 40);
     doc.line(60, finalY + 40, 120, finalY + 40);
-    doc.save(`${matric}_result.pdf`);
+    doc.save(`${matric}_transcript.pdf`);
+    toast.success("Transcript Generated!");
   };
 
   return (
