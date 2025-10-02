@@ -3,6 +3,7 @@ import { getSessions, getLevels } from "../../api/schools";
 import {getResults} from "../../api/students";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import exoFont from "../../assets/exo.ttf"; 
 import {
   Container,
   Box,
@@ -18,6 +19,9 @@ import {
   TableRow,
 } from "@mui/material";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "../../assets/maduka-logo.png"; 
+import stamp from "../../assets/stamp.png"; 
 
 export default function StudentResults() {
   const [formData, setFormData] = useState({
@@ -28,6 +32,7 @@ export default function StudentResults() {
   // State for sessions, levels
   const [sessions, setSessions] = useState([]);
   const [levels, setLevels] = useState([]);
+  const [student, setStudent] = useState({})
   // Fetch sessions
   useEffect(() => {
     getSessions()
@@ -45,13 +50,39 @@ export default function StudentResults() {
       })
       .catch((error=> {
        toast.error(error.response.data.message);
-        console.log(error);
       }));
   }, []);
 
-  // Fetch semesters
-
+  // Fetch results
   const [results, setResults] = useState(null);
+
+  const getGP = (grade, credit) => {
+    switch (grade) {
+      case "A": return 5 * credit;
+      case "B": return 4 * credit;
+      case "C": return 3 * credit;
+      case "D": return 2 * credit;
+      case "E": return 1 * credit;
+      case "F": return 0;
+      default: return 0;
+    }
+  };
+
+  // const handleFetchResults = () => {
+  //   getResults(formData)G G  BBB B B    B     BH
+  //     .then(res => {
+  //       // Add GP to each result
+  //       const resultsWithGP = (res.data.results || []).map(result => ({
+  //         ...result,
+  //         gp: getGP(result.grade)
+  //       }));
+  //       setResults(resultsWithGP);
+  //       toast.success("Results fetched successfully!");
+  //     })
+  //     .catch(error => {
+  //       toast.error(error.response?.data?.message || "Error fetching results");
+  //     });
+  // };
 
   const handleChange = (e) => {
     setFormData({
@@ -65,6 +96,7 @@ export default function StudentResults() {
       if(res.data.results) {
         toast.success("Results retrieved successfully!");
         setResults(res.data.results);
+        setStudent(res.data.student);
         return;
       }
       toast.info(res.data.message)
@@ -72,7 +104,6 @@ export default function StudentResults() {
     })
     .catch(error=> {
       toast.error(error.response.data.message);
-      console.log(error.response)
       setResults([]);
     })
    
@@ -80,27 +111,76 @@ export default function StudentResults() {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Student Result Slip", 20, 20);
-    doc.text(
-      `Session: ${formData.session} | Level: ${formData.level} | Semester: ${formData.semester}`,
-      20,
-      30
-    );
+    doc.addFileToVFS("MyFont.ttf", exoFont);
+    doc.addFont("MyFont.ttf", "MyFont", "normal");
+    doc.setFont("MyFont");
+    doc.addImage(logo, "PNG", 90, 10, 25, 25);
+    doc.setFontSize(18);
+      doc.setFillColor(100, 0, 0, 0);
+      doc.text("Maduka University, Ekwegbe, Enugu State", 45, 40);
+      doc.setFontSize(14);
+      doc.text("Email: vc@madukauniversity.edu.ng", 65, 47);
+      doc.setFontSize(12);
+      doc.text("Website: www.madukauniversity.edu.ng", 65, 54);
+      doc.setFontSize(16);
+      doc.text("Personal Details", 14, 64);
+      doc.setFontSize(12);
+      doc.text(`Name: ${student.fullName}`, 14, 71);
+      doc.text(`Matric No: ${student.matric}`, 14, 78);
+      doc.text(`Department: ${student.department}`, 14, 85);
+      doc.text(`Faculty: ${student.school}`, 14, 92);
+      doc.text(`${student.level} LEVEL RESULTS FOR ${results[0].session} ACADEMIC SESSION`, 45, 101);
+    let tableColumn, tableRows;
+    tableColumn = ["SEMESTER", "S/N", "CODE", "COURSE TITLE", "TUR",  "GRADE", "GP"];
+    tableRows = results.map((r, idx) => [r.semester, idx + 1, r.code, r.title, r.credit,  r.grade, getGP(r.grade, r.credit)]);
 
-    let y = 50;
-    results.forEach((result, index) => {
-      doc.text(
-        `${index + 1}. ${result.code} - ${result.title} | Grade: ${
-          result.grade
-        } | Credit: ${result.credit}`,
-        20,
-        y
-      );
-      y += 10;
+    // Calculate totals
+    const total_Credits = results.reduce((sum, r) => sum + Number(r.credit), 0);
+    const totalGP = results.reduce((sum, r) => sum + getGP(r.grade, r.credit), 0);
+
+    // Add summary row
+    tableRows.push([
+      '', '', '', 'Total', total_Credits, '', totalGP, ""
+    ]);
+
+    autoTable(doc, {
+      startY: 103,
+      head: [tableColumn],
+      body: tableRows,
     });
 
-    doc.save("result.pdf");
+    // CGPA Calculation
+    let totalCredits = 0;
+    let totalGradePoints = 0;
+    results.forEach(r => {
+      totalCredits += Number(r.credit);
+      totalGradePoints += getGP(r.grade, r.credit);
+    });
+    const cgpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : "0.00";
+    // Place CGPA below the table
+    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 120;
+      doc.setFontSize(13);
+      doc.setTextColor(44, 44, 120);
+      doc.text(`CGPA: ${cgpa}`, 14, finalY);
+    // Add CGPA classification comment
+    let cgpaComment = '';
+    const cgpaNum = parseFloat(cgpa);
+    if (cgpaNum < 2.5) {
+      cgpaComment = 'PASS';
+    } else if (cgpaNum < 3.5) {
+      cgpaComment = 'SECOND CLASS LOWER';
+    } else if (cgpaNum < 4.5) {
+      cgpaComment = 'SECOND CLASS UPPER';
+    } else {
+      cgpaComment = 'FIRST CLASS';
+    }
+      doc.setFontSize(13);
+      doc.text(`Comment: ${cgpaComment}`, 14, finalY + 6);
+      doc.setTextColor(0, 0, 0); 
+    doc.addImage(stamp, "PNG", 110, finalY, 52, 35);
+
+  doc.save(`${student.matric}_result.pdf`);
+  toast.success("Result Generated!");
   };
 
   return (
