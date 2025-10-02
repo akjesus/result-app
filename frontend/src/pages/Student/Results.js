@@ -68,27 +68,8 @@ export default function StudentResults() {
     }
   };
 
-  // const handleFetchResults = () => {
-  //   getResults(formData)G G  BBB B B    B     BH
-  //     .then(res => {
-  //       // Add GP to each result
-  //       const resultsWithGP = (res.data.results || []).map(result => ({
-  //         ...result,
-  //         gp: getGP(result.grade)
-  //       }));
-  //       setResults(resultsWithGP);
-  //       toast.success("Results fetched successfully!");
-  //     })
-  //     .catch(error => {
-  //       toast.error(error.response?.data?.message || "Error fetching results");
-  //     });
-  // };
+  
 
-  const handleChange = (e) => {
-    setFormData({
-      [e.target.name]: e.target.value,
-    });
-  };
 
   const handleSearch = () => {
     getResults(formData)
@@ -129,39 +110,54 @@ export default function StudentResults() {
       doc.text(`Matric No: ${student.matric}`, 14, 78);
       doc.text(`Department: ${student.department}`, 14, 85);
       doc.text(`Faculty: ${student.school}`, 14, 92);
-      doc.text(`${student.level} LEVEL RESULTS FOR ${results[0].session} ACADEMIC SESSION`, 45, 101);
-    let tableColumn, tableRows;
-    tableColumn = ["SEMESTER", "S/N", "CODE", "COURSE TITLE", "TUR",  "GRADE", "GP"];
-    tableRows = results.map((r, idx) => [r.semester, idx + 1, r.code, r.title, r.credit,  r.grade, getGP(r.grade, r.credit)]);
+      doc.text(`${student.level} LEVEL RESULTS FOR ${results[0].session} ACADEMIC SESSION`, 45, 98);
+    // Group results by semester
+    const grouped = {};
+    results.forEach((r) => {
+      if (!grouped[r.semester]) grouped[r.semester] = [];
+      grouped[r.semester].push(r);
+    });
 
-    // Calculate totals
-    const total_Credits = results.reduce((sum, r) => sum + Number(r.credit), 0);
-    const totalGP = results.reduce((sum, r) => sum + getGP(r.grade, r.credit), 0);
-
-    // Add summary row
-    tableRows.push([
-      '', '', '', 'Total', total_Credits, '', totalGP, ""
-    ]);
-
-    autoTable(doc, {
-      startY: 103,
-      head: [tableColumn],
-      body: tableRows,
+    let startY = 103;
+    let totalCredits = 0;
+    let totalGradePoints = 0;
+    let semesterGPPs = [];
+    Object.entries(grouped).forEach(([semester, semResults], idx) => {
+      let tableColumn = ["S/N", "CODE", "COURSE TITLE", "TUR", "GRADE", "GP"];
+      let tableRows = semResults.map((r, i) => [i + 1, r.code, r.title, r.credit, r.grade, getGP(r.grade, r.credit)]);
+      // Semester totals
+      const semCredits = semResults.reduce((sum, r) => sum + Number(r.credit), 0);
+      const semGP = semResults.reduce((sum, r) => sum + getGP(r.grade, r.credit), 0);
+      tableRows.push(["", "", "Total", semCredits, "", semGP]);
+      // GPP for semester
+      const gpp = semCredits > 0 ? (semGP / semCredits).toFixed(2) : "0.00";
+      semesterGPPs.push({ semester, gpp });
+      // Add semester title
+      doc.setFontSize(14);
+      doc.text(semester, 14, startY);
+      // Add table for this semester
+      autoTable(doc, {
+        startY: startY + 4,
+        head: [tableColumn],
+        body: tableRows,
+      });
+      startY = doc.lastAutoTable.finalY + 10;
+      // Accumulate for CGPA
+      totalCredits += semCredits;
+      totalGradePoints += semGP;
     });
 
     // CGPA Calculation
-    let totalCredits = 0;
-    let totalGradePoints = 0;
-    results.forEach(r => {
-      totalCredits += Number(r.credit);
-      totalGradePoints += getGP(r.grade, r.credit);
-    });
     const cgpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : "0.00";
-    // Place CGPA below the table
-    const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 120;
-      doc.setFontSize(13);
-      doc.setTextColor(44, 44, 120);
-      doc.text(`CGPA: ${cgpa}`, 14, finalY);
+    // Place CGPA and GPPs below tables
+    doc.setFontSize(13);
+    doc.setTextColor(44, 44, 120);
+    let y = startY;
+    semesterGPPs.forEach((s, i) => {
+      doc.text(`${s.semester} GPA: ${s.gpp}`, 14, y);
+      y += 7;
+    });
+    doc.text(`CGPA: ${cgpa}`, 14, y);
     // Add CGPA classification comment
     let cgpaComment = '';
     const cgpaNum = parseFloat(cgpa);
@@ -174,13 +170,13 @@ export default function StudentResults() {
     } else {
       cgpaComment = 'FIRST CLASS';
     }
-      doc.setFontSize(13);
-      doc.text(`Comment: ${cgpaComment}`, 14, finalY + 6);
-      doc.setTextColor(0, 0, 0); 
-    doc.addImage(stamp, "PNG", 110, finalY, 52, 35);
+    doc.setFontSize(13);
+    doc.text(`Comment: ${cgpaComment}`, 14, y + 7);
+    doc.setTextColor(0, 0, 0);
+    doc.addImage(stamp, "PNG", 110, y, 52, 35);
 
-  doc.save(`${student.matric}_result.pdf`);
-  toast.success("Result Generated!");
+    doc.save(`${student.matric}_result.pdf`);
+    toast.success("Result Generated!");
   };
 
   return (

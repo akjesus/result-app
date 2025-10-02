@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {getProfile} from "../../api/students";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -20,6 +19,7 @@ export default function StudentProfile() {
       getProfile()
         .then(res => {
           setProfileData(res.data.user || []);
+          console.log(res.data.user)
         })
         .catch((error=> {
          toast.error(error.response.data.message);

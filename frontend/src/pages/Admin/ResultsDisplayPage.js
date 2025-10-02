@@ -23,7 +23,7 @@ import {
 
 
 } from "@mui/material";
-import { Download, Visibility, Edit } from "@mui/icons-material";
+import {  Visibility, Edit } from "@mui/icons-material";
 import Papa from "papaparse";
 import TranscriptModal from "./ResultModal";
 import jsPDF from "jspdf";
@@ -126,67 +126,6 @@ export default function ResultDisplayPage() {
     setOpenResult(true);
   };
 
-  // Bulk Download All Transcripts for current page
-  const handleDownloadAll = () => {
-    const doc = new jsPDF();
-    paginatedStudents.forEach((student, idx) => {
-      if (idx !== 0) doc.addPage();
-      // Use the same logic as handleDownloadTranscript, but adapt for both student.results and student.courses_info
-      addTranscriptHeader(doc);
-      doc.setFontSize(11);
-      // Try both possible student object shapes
-      const name = student.name || student.student_name || '';
-      const matric = student.matNo || student.matric || '';
-      const faculty = student.faculty || '';
-      const department = student.department || student.department_name || '';
-      const level = student.level || student.level_name || '';
-      const session = student.session || '';
-      doc.text(`Name: ${name}`, 14, 105);
-      doc.text(`Matric No: ${matric}`, 14, 112);
-      if (faculty) doc.text(`Faculty: ${faculty}`, 14, 119);
-      doc.text(`Department: ${department}`, 14, 126);
-      doc.text(`Level: ${level}`, 14, 133);
-      if (session) doc.text(`Session: ${session}`, 14, 140);
-
-      // Table
-      let tableColumn, tableRows;
-      if (Array.isArray(student.results)) {
-        tableColumn = ["S/N", "CODE", "COURSE TITLE", "UNIT", "SCORE", "GRADE", "GP"];
-        tableRows = [];
-        student.results.forEach((r, index) => {
-          tableRows.push([index + 1, r.code, r.title, r.unit, r.score, r.grade, r.gp]);
-        });
-      } else if (Array.isArray(student.courses_info)) {
-        tableColumn = ["Course Code", "Course Name", "Credit", "Score", "Grade"];
-        tableRows = [];
-        student.courses_info.forEach((course, index) => {
-          tableRows.push([
-            course.code,
-            course.name,
-            course.credit_load,
-            course.total_score,
-            course.grade
-          ]);
-        });
-      }
-      if (tableColumn && tableRows) {
-        autoTable(doc, {
-          startY: 150,
-          head: [tableColumn],
-          body: tableRows,
-        });
-      }
-
-      // GPA/CGPA/Comment if available
-      let finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 170;
-      if (student.totalUnits) doc.text(`Total Units: ${student.totalUnits}`, 14, finalY);
-      if (student.gpa) doc.text(`GPA: ${student.gpa}`, 14, finalY + 7);
-      if (student.cgpa) doc.text(`CGPA: ${student.cgpa}`, 14, finalY + 14);
-      if (student.comment) doc.text(`Comment: ${student.comment}`, 14, finalY + 21);
-      addTranscriptFooter(doc);
-    });
-    doc.save("all_transcripts.pdf");
-  };
 
   // Download transcript PDF for a student
   const handleDownloadTranscript = (student) => {

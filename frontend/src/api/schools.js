@@ -2,42 +2,52 @@
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
-const token = localStorage.getItem('token')
+// Always get token inside each function
 
 
-export const getSchools = () => axios.get(`${BASE_URL}/schools/faculties`,
-    {
-    headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-});
+export const getSchools = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/schools/faculties`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+};
 
-export const getCourses = () => axios.get(`${BASE_URL}/courses`,
-    {
-    headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-});
+export const getCourses = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/courses`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+};
 
-export const getSessions = () => axios.get(`${BASE_URL}/schools/sessions`,
-    {
-    headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-});
+export const getSessions = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/schools/sessions`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+};
 
-export const getLevels = () => axios.get(`${BASE_URL}/schools/levels`,
-    {
-    headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-});
+export const getLevels = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/schools/levels`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+};
 
-export const createCourse = (data) => axios.post(`${BASE_URL}/courses`, 
+export const createCourse = (data) => {
+     const token = localStorage.getItem('token');
+     return axios.post(`${BASE_URL}/courses`, 
     { 
         name: data.title,
         code: data.code, 
@@ -52,9 +62,11 @@ export const createCourse = (data) => axios.post(`${BASE_URL}/courses`,
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   }
-});
+})};
 
-export const updateCourse = (data) => axios.put(`${BASE_URL}/courses`, 
+export const updateCourse = (data) => {
+     const token = localStorage.getItem('token');
+    return axios.put(`${BASE_URL}/courses`, 
     { 
         name: data.title,
         code: data.code, 
@@ -69,15 +81,16 @@ export const updateCourse = (data) => axios.put(`${BASE_URL}/courses`,
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   }
-});
-
-export const getCoursesWithResults = () => axios.get(`${BASE_URL}/results/courses`,
+})};
+export const getCoursesWithResults = () => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/results/courses`,
     {
     headers: {
           'Content-Type': 'application/json',
          'Authorization': `Bearer ${token}` 
           }
-});
+})};
 
 export const addSchool = (data) => axios.post(`${BASE_URL}/schools/faculties`, data);
 export const updateSchool = (id, data) => axios.put(`${BASE_URL}/schools/faculties/${id}`, data);

@@ -106,7 +106,7 @@ export default function AdminStudents() {
 
   // Pagination
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -128,7 +128,6 @@ export default function AdminStudents() {
     if (selectedFaculty && selectedDepartment) {
       getStudentsForDepartment(selectedDepartment)
         .then((res) => {
-          console.log(res.data.students)
           setStudents(res.data.students || []);
           setStudentsFetched(true);
           toast.success(`Students fetched for ${res.data.students[0].department || 'department'}`);
@@ -164,7 +163,6 @@ export default function AdminStudents() {
 
     } else {
       setStudents([...students, newStudent]);
-       console.log(newStudent);
     }
     handleClose();
   };
