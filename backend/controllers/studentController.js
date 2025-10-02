@@ -338,8 +338,14 @@ exports.getStudentsByDepartment = async (req, res) => {
   const departmentId = parseInt(req.params.departmentId);
     try { 
         const [students] = await db.query(`
-          SELECT id, concat(first_name, ' ', last_name) as name, registration_number as matric
-          FROM students 
+          SELECT students.id as id, concat(first_name, ' ', last_name) as name, 
+          first_name, last_name, registration_number as matric,
+          email, departments.name as department, levels.name as level, 
+          faculties.name as school
+          FROM students
+          JOIN departments ON students.department_id = departments.id
+          JOIN levels ON students.level_id = levels.id
+          JOIN faculties ON departments.faculty_id = faculties.id
           WHERE department_id = ?`, [departmentId]);
         return res.status(200).json({success: true, code: 200, students});
     } catch (error) {

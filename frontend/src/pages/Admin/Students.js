@@ -28,7 +28,7 @@ import { Edit, Delete, UploadFile, Download } from "@mui/icons-material";
 // Mock API imports (replace with actual API calls)
 import { getSchools, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
-import { getStudents, createStudent } from "../../api/students";
+import { getStudentsForDepartment, createStudent } from "../../api/students";
 
 export default function AdminStudents() {
   const handleDownloadSampleCSV = () => {
@@ -84,16 +84,6 @@ export default function AdminStudents() {
   // Fetch students from API and setStudents
   const [students, setStudents] = useState([]);
 
-  useEffect(() => {
-   getStudents().then((res) => {
-        setStudents(res.data.students || []);
-        toast.success(`Students fetched `);  
-      })
-      .catch((error) => {
-        console.log(error)
-        toast.error(error.response.data.message || error);});
-  }, []);
-
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [levels, setLevels] = useState([]);
@@ -118,9 +108,13 @@ export default function AdminStudents() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  const [selectedFaculty, setSelectedFaculty] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [studentsFetched, setStudentsFetched] = useState(false);
+
   // Fetch schools & departments
   useEffect(() => {
-    getSchools().then((res) => setSchools(res.data.schools)).catch(console.error);
+    getSchools().then((res) => setSchools(res.data.schools || res.data.faculties || [])).catch(console.error);
     getDepartments().then((res) => setDepartments(res.data.departments)).catch(console.error);
     getLevels().
     then((res)=> {
@@ -128,6 +122,25 @@ export default function AdminStudents() {
     ).
     catch(error=> toast.error(error.message))
   }, []);
+
+  // Fetch students only when button is clicked
+  const handleFetchStudents = () => {
+    if (selectedFaculty && selectedDepartment) {
+      getStudentsForDepartment(selectedDepartment)
+        .then((res) => {
+          console.log(res.data.students)
+          setStudents(res.data.students || []);
+          setStudentsFetched(true);
+          toast.success(`Students fetched for ${res.data.students[0].department || 'department'}`);
+        })
+        .catch((error) => {
+          console.log(error)
+          toast.error(error.response?.data?.message || error);
+        });
+    } else {
+      toast.info("Please select both faculty and department.");
+    }
+  };
 
   const handleOpen = (student = null, index = null) => {
     if (student) {
@@ -166,8 +179,7 @@ export default function AdminStudents() {
   // Filtered students
   const filteredStudents = students.filter(
     (s) =>
-      s.first_name.toLowerCase().includes(search.toLowerCase()) ||
-      s.last_name.toLowerCase().includes(search.toLowerCase()) &&
+      s.name.toLowerCase().includes(search.toLowerCase()) &&
       (filterDept ? s.department === filterDept : true) &&
       (filterLevel ? s.level === filterLevel : true)
   );
@@ -191,20 +203,57 @@ export default function AdminStudents() {
   <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadSampleCSV}>Download Sample CSV</Button>
       </Box>
 
+      
+
+      {/* Faculty and Department Filters */}
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        <FormControl sx={{ minWidth: 220 }} size="small">
+          <InputLabel>Faculty</InputLabel>
+          <Select
+            value={selectedFaculty}
+            label="Faculty"
+            onChange={e => {
+              setSelectedFaculty(e.target.value);
+              setSelectedDepartment("");
+              setStudents([]);
+              setStudentsFetched(false);
+            }}
+          >
+            <MenuItem value="">Select Faculty</MenuItem>
+            {schools.map(fac => (
+              <MenuItem key={fac.id} value={fac.name}>{fac.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 220 }} size="small" disabled={!selectedFaculty}>
+          <InputLabel>Department</InputLabel>
+          <Select
+            value={selectedDepartment}
+            label="Department"
+            onChange={e => {
+              setSelectedDepartment(e.target.value);
+              setStudents([]);
+              setStudentsFetched(false);
+            }}
+          >
+            <MenuItem value="">Select Department</MenuItem>
+            {departments.filter(dep => dep.school === selectedFaculty).map(dep => (
+              <MenuItem key={dep.id} value={dep.id}>{dep.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Button
+          variant="contained"
+          sx={{ bgcolor: "#2C2C78" }}
+          onClick={handleFetchStudents}
+          disabled={!selectedFaculty || !selectedDepartment}
+        >
+          Fetch Students
+        </Button>
+      </Box>
       {/* Filters */}
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
         <TextField label="Search by name" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
-        <TextField
-          label="Filter by Department"
-          select
-          value={filterDept}
-          onChange={(e) => setFilterDept(e.target.value)}
-          size="small"
-          sx={{ minWidth: 280 }}
-        >
-          <MenuItem value="">All</MenuItem>
-          {departments.map((d) => (<MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>))}
-        </TextField>
         <TextField
           label="Filter by Level"
           select
@@ -222,10 +271,8 @@ export default function AdminStudents() {
       <Table sx={{ minWidth: 320, width: '100%', overflowX: 'auto' }}>
         <TableHead>
           <TableRow>
-            <TableCell>First Name</TableCell>
-            <TableCell>Last Name</TableCell>
+            <TableCell>Name</TableCell>
             <TableCell>Matric Number</TableCell>
-            <TableCell>School</TableCell>
             <TableCell>Department</TableCell>
             <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Level</TableCell>
             <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
@@ -235,10 +282,8 @@ export default function AdminStudents() {
         <TableBody>
           {filteredStudents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((student, index) => (
             <TableRow key={index}>
-              <TableCell>{student.first_name}</TableCell>
-              <TableCell>{student.last_name}</TableCell>
+              <TableCell>{student.name}</TableCell>
               <TableCell>{student.matric}</TableCell>
-              <TableCell>{student.school}</TableCell>
               <TableCell>{student.department}</TableCell>
               <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.level}</TableCell>
               <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.email}</TableCell>
@@ -282,34 +327,37 @@ export default function AdminStudents() {
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editIndex !== null ? "Edit Student" : "Add Student"}</DialogTitle>
         <DialogContent>
-          <TextField margin="dense" label="First Name" name="first_name" fullWidth value={newStudent.first_name} onChange={handleChange} />
-          <TextField margin="dense" label="Last Name" name="last_name" fullWidth value={newStudent.last_name} onChange={handleChange} />
-          <TextField margin="dense" label="Matric Number" name="matric" fullWidth value={newStudent.matric} onChange={handleChange} />
-
-          <FormControl fullWidth margin="dense">
-            <InputLabel>School</InputLabel>
-            <Select name="school" value={newStudent.school} onChange={handleChange}>
-              {schools.map((s) => (<MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth margin="dense">
-            <InputLabel>Department</InputLabel>
-            <Select name="department" value={newStudent.department} onChange={handleChange}>
-              {departments
-                .filter((d) => !newStudent.school || d.school === newStudent.school)
-                .map((d) => (<MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth margin="dense">
-            <InputLabel>Level</InputLabel>
-            <Select name="level" value={newStudent.level} onChange={handleChange}>
-              {levels.map((l) => (<MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-
-          <TextField margin="dense" label="Email" name="email" type="email" fullWidth value={newStudent.email} onChange={handleChange} />
+          <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            <Box display="flex" gap={2}>
+              <TextField margin="dense" label="First Name" name="first_name" fullWidth value={newStudent.first_name} onChange={handleChange} sx={{ flex: 1 }} />
+              <TextField margin="dense" label="Last Name" name="last_name" fullWidth value={newStudent.last_name} onChange={handleChange} sx={{ flex: 1 }} />
+            </Box>
+            <TextField margin="dense" label="Matric Number" name="matric" fullWidth value={newStudent.matric} onChange={handleChange} />
+            <Box display="flex" gap={2}>
+              <FormControl fullWidth margin="dense" sx={{ flex: 1 }}>
+                <InputLabel>Faculty</InputLabel>
+                <Select name="school" value={newStudent.school} onChange={handleChange} label="Faculty">
+                  {schools.map((s) => (<MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="dense" sx={{ flex: 1 }}>
+                <InputLabel>Department</InputLabel>
+                <Select name="department" value={newStudent.department} onChange={handleChange} label="Department">
+                  {departments.filter((d) => newStudent.school || d.school === newStudent.school)
+                    .map((d) => (<MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Box display="flex" gap={2}>
+              <FormControl fullWidth margin="dense" sx={{ flex: 1 }}>
+                <InputLabel>Level</InputLabel>
+                <Select name="level" value={newStudent.level} onChange={handleChange} label="Level">
+                  {levels.map((l) => (<MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>))}
+                </Select>
+              </FormControl>
+              <TextField margin="dense" label="Email" name="email" type="email" fullWidth value={newStudent.email} onChange={handleChange} sx={{ flex: 1 }} />
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
