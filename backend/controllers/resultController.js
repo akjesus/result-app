@@ -220,28 +220,50 @@ exports.getResultsByStudent = async (req, res) => {
     try {
         // Destructure from query
         const { session, level, semester } = req.query;
-        if (!session || !level || !semester) {
-            return res.status(400).json({ success: false, code: 400, message: "Semester, Session and Levels are required!" });
+        if (!session || !level) {
+            return res.status(400).json({ success: false, code: 400, message: "Session and Level are required!" });
         }
-        const [results] = await db.query(
-            `SELECT results.id, results.course_id, courses.code as code, courses.name AS title, students.first_name, 
-            students.last_name, students.registration_number, 
-            results.cat_score + results.exam_score AS total_score, results.grade,
-            courses.credit_load as credit, semesters.name as semester, sessions.name as session
-            FROM results
-            JOIN courses ON results.course_id = courses.id
-            JOIN students ON results.registration_number = students.registration_number
-            JOIN sessions ON results.session_id = sessions.id
-            JOIN semesters ON results.semester_id = semesters.id
-            WHERE results.registration_number = ?
-            AND results.session_id = ?
-            AND results.semester_id = ?
-            AND students.level_id = ? 
-            AND results.blocked = 0 `,
-            [registration_number, session, semester, level]
-        );
+        let results;
+        if (semester) {
+            // Fetch for specific semester
+            [results] = await db.query(
+                `SELECT results.id, results.course_id, courses.code as code, courses.name AS title, students.first_name, 
+                students.last_name, students.registration_number, 
+                results.cat_score + results.exam_score AS total_score, results.grade,
+                courses.credit_load as credit, semesters.name as semester, sessions.name as session
+                FROM results
+                JOIN courses ON results.course_id = courses.id
+                JOIN students ON results.registration_number = students.registration_number
+                JOIN sessions ON results.session_id = sessions.id
+                JOIN semesters ON results.semester_id = semesters.id
+                WHERE results.registration_number = ?
+                AND results.session_id = ?
+                AND results.semester_id = ?
+                AND students.level_id = ? 
+                AND results.blocked = 0 `,
+                [registration_number, session, semester, level]
+            );
+        } else {
+            // Fetch for session only (all semesters)
+            [results] = await db.query(
+                `SELECT results.id, results.course_id, courses.code as code, courses.name AS title, students.first_name, 
+                students.last_name, students.registration_number, 
+                results.cat_score + results.exam_score AS total_score, results.grade,
+                courses.credit_load as credit, semesters.name as semester, sessions.name as session
+                FROM results
+                JOIN courses ON results.course_id = courses.id
+                JOIN students ON results.registration_number = students.registration_number
+                JOIN sessions ON results.session_id = sessions.id
+                JOIN semesters ON results.semester_id = semesters.id
+                WHERE results.registration_number = ?
+                AND results.session_id = ?
+                AND students.level_id = ? 
+                AND results.blocked = 0 `,
+                [registration_number, session, level]
+            );
+        }
         if(results.length === 0) {
-            return res.status(200).json({ success: true, code: 404, message: `No results for this semester and session yet` });
+            return res.status(200).json({ success: true, code: 404, message: `No results for this session${semester ? ' and semester' : ''} yet` });
         }
         return res.status(200).json({success: true, code: 200, results, student: userDetails});
     } catch (err) {
