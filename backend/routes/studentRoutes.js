@@ -14,7 +14,9 @@ router.get("/gpa", getCurrentGPA);
 router.get("/all-results", getAllResultsForStudent);
 router.post("/change-password", changeStudentPassword);
 
-router.use(restrictTo("admin", "superadmin", "staff"))
+
+router.use(restrictTo("admin", "staff"))
+router.get('/departments', studentController.getStudentsByDepartment);
 router.post("/bulk-upload", studentController.bulkUploadStudents);
 router.get("/bulk-download", studentController.bulkDownloadStudents);
 
@@ -25,6 +27,6 @@ router.post("/:id/reset-password", studentController.resetPassword);
 router.put("/:id",  studentController.updateUser);
 router.delete("/:id",  studentController.deleteUser);
 router.post("/:id/block",  studentController.blockUser);
-router.get('/departments/:departmentId', studentController.getStudentsByDepartment);
+
 
 module.exports = router;

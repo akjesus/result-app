@@ -3,8 +3,7 @@ const Staff = require("../models/staffModel");
 const Student = require("../models/studentModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const dotenv = require("dotenv");
-dotenv.config({ path: "/.env", quiet: true });
+
 let blacklistedTokens = new Set(); // Store invalid tokens (only works for in-memory)
 
 const JWT_SECRET = process.env.JWT_SECRET; // Store in env file
