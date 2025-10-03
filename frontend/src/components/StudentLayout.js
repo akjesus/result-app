@@ -40,8 +40,8 @@ const StudentLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    toast.info("Logged Out!")
-    navigate("/login");
+     setTimeout(() => { navigate("/login")}, 1500);
+    setTimeout(() => { toast.info("Logged Out!")}, 2000);
   };
 
   return (

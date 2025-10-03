@@ -42,5 +42,10 @@ class Session {
         const [result] = await db.query('UPDATE sessions SET active = 1 WHERE id = ?)', [id]);
         return result.affectedRows > 0;
     }
+    static async getSemestersForSession(sessionId) {
+        const [rows] = await db.query('SELECT id, name FROM semesters WHERE session_id = ?', [sessionId]);
+        return rows;
+    }
+    
 }
 module.exports = Session;

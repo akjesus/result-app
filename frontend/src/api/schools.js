@@ -92,6 +92,7 @@ export const getCoursesWithResults = () => {
           }
 })};
 
+
 export const addSchool = (data) => axios.post(`${BASE_URL}/schools/faculties`, data);
 export const updateSchool = (id, data) => axios.put(`${BASE_URL}/schools/faculties/${id}`, data);
 export const deleteSchool = (id) => axios.delete(`${BASE_URL}/schools/faculties/${id}`);

@@ -17,3 +17,23 @@ export const getAllLevels = () =>
       'Authorization': `Bearer ${token}`
     }
   });
+
+  export const getSemestersForSession = (sessionId) => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${BASE_URL}/schools/sessions/${sessionId}/semesters`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  };
+  
+  export const setActiveSemester = (semesterId) => {
+    const token = localStorage.getItem('token');
+    return axios.post(`${BASE_URL}/schools/semesters/${semesterId}/activate`, {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getDepartments } from "../../api/departments";
-import { getCoursesWithResults, getCourses } from "../../api/schools";
+import {  getCourses } from "../../api/schools";
 import { getStudentsForDepartment } from "../../api/students";
 import { getSessionsWithSemesters } from "../../api/sessions";
 import {createResult} from "../../api/results";

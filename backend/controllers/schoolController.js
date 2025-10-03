@@ -3,6 +3,7 @@ const Faculty = require("../models/facultyModel")
 const db = require("../config/database");
 const Session = require("../models/sessionsModel");
 const Level = require("../models/levelModel")
+const Semester = require("../models/semestersModel");
 
 // Get all departments
 exports.getAllDepartments = async (req, res) => {
@@ -137,6 +138,42 @@ exports.getLevels = async (req, res) => {
         return res.status(200).json({ success: true, code: 200, levels });
     } catch (error) {
         console.log('Error fetching levels:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+exports.getSemestersForSession = async (req, res) => {
+    const sessionId = parseInt(req.params.id);
+    console.log("Fetching semesters for session ID:", sessionId);
+    try {
+        const semesters = await Session.getSemestersForSession(sessionId);
+        if (!semesters) {
+            console.log('No semesters found for session ID:', sessionId);
+            return res.status(404).json({ success: false, code: 404, message: 'No semesters found for this session' });
+        }
+        return res.status(200).json({ success: true, code: 200, semesters });
+    } catch (error) {
+        console.log('Error fetching semesters for session:', error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+};
+
+
+exports.activateSemester = async (req, res) => {
+    const semesterId = parseInt(req.params.id);
+    try {
+        const semester = await Semester.findById(semesterId);
+        if (!semester) {
+            return res.status(404).json({ success: false, code: 404, message: 'Semester not found' });
+        }
+        const activated = await Semester.activateSemester(semesterId);
+        if (activated) {
+            return res.status(200).json({ success: true, code: 200, message: 'Semester activated successfully' });
+        } else {
+            return res.status(500).json({ success: false, code: 500, message: 'Failed to activate semester' });
+        }
+    } catch (error) {
+        console.log('Error activating semester:', error);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };
