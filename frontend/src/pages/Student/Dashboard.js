@@ -29,7 +29,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     getCurrentGPA()
       .then(res => {
-        console.log(res.data.gpa);
+        console.log(res.data);
         const floatgpa = parseFloat(res.data.gpa.gpa) || 0;
         const floatcgpa = parseFloat(res.data.gpa.cgpa) || 0;
         setGpaData({
@@ -40,7 +40,8 @@ const StudentDashboard = () => {
           performance: res.data.gpa.performance || [],
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log(err.response.data.message || err.message || "Error fetching GPA");
         setGpaData({
           gpa: 0,
           cgpa: 0,

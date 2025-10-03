@@ -50,8 +50,9 @@ const AdminLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    toast.info("Logging Out!")
-    setTimeout(() => { navigate("/login")}, 2000);
+    setTimeout(() => { navigate("/login")}, 1500);
+    setTimeout(() => { toast.info("Logged Out!")}, 2000);
+    
   };
 
   return (

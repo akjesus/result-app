@@ -411,6 +411,5 @@ class Result {
     `);
     return rows;
   }
-
 }
 module.exports = Result;

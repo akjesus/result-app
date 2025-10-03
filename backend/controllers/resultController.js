@@ -423,9 +423,11 @@ exports.getCurrentGPA = async (req, res) => {
         }
         const [currentSemester] = await db.query(`
             SELECT id from semesters 
-            where active = 1 
-            AND session_id = 
-            ( select id from sessions where active = 1);`);
+            where active = 1;`);
+             console.log(currentSemester)
+        if (!currentSemester || currentSemester.length === 0) {
+            return res.status(404).json({ success: false, code: 404, message: 'No active semester found' });
+        }
         const gpa = await Result.calculateCurrentGPA(student.matric, currentSemester[0].id);
         return res.status(200).json({ success: true, code: 200, gpa });
     } catch (error) {
