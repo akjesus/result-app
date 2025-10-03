@@ -37,6 +37,7 @@ const courseRoutes = require("./routes/courseRoutes");
 const resultRoutes = require("./routes/resultRoutes");
 const schoolRoutes = require("./routes/schoolRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const staffRoutes = require("./routes/staffRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
 //Use Routes
@@ -46,6 +47,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/schools", schoolRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/staff", staffRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 // Handle 404 errors for undefined routes

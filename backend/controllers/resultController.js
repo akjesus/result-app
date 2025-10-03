@@ -86,6 +86,7 @@ exports.getResultById = async (req, res) => {
 };
 
 exports.createResult = async (req, res) => {
+    console.log(req.body)
     const { registration_number, course_id, cat_score, exam_score, semester_id, session_id } = req.body.results;
     //validate inputs
     if (!registration_number || !course_id || !cat_score  || !exam_score  || !semester_id || !session_id ) {

@@ -58,7 +58,7 @@ export default function TranscriptManagement() {
       departments.name.toLowerCase().includes(search.toLowerCase())
       || departments.school.toLowerCase().includes(search.toLowerCase())
   );
-
+  
   return (
     <>
     <ToastContainer />

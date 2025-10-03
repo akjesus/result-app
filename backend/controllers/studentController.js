@@ -110,19 +110,15 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, code: 400, message: "ID required!" });
         }
         // Implement password reset logic here
-        const user = await Student.findById(id) || await Staff.findByUsername(id);
-        if (!user) {
-            return res.status(404).json({ success: false, code: 404, message: "User not found!" });
+        const student = await Student.findById(id);
+        if (!student) {
+            return res.status(404).json({ success: false, code: 404, message: "Student not found!" });
         }
         const newPassword = await bcrypt.hash("password", 10);
-        let table = user.role === 'student' ? 'students' : 'staff';
-        let Model = user.role === 'student' ? Student : Staff;
-
-        await Model.execute(`UPDATE ${table} SET password = ? WHERE id = ?`, [newPassword, user.id]);
-
-        res.status(200).json({ success: true, code: 200, message:  "Password reset successful" });
+        await Student.execute(`UPDATE students SET password = ? WHERE id = ?`, [newPassword, student.id]);
+        return res.status(200).json({ success: true, code: 200, message:  "Password reset successful" });
     } catch (err) {
-      res.status(500).json({ success: false, code: 500, message:  err.message });
+      return res.status(500).json({ success: false, code: 500, message:  err.message });
     }
 };
 
@@ -335,21 +331,33 @@ exports.getMyProfile = async (req, res) => {
 
 
 exports.getStudentsByDepartment = async (req, res) => {
-  const departmentId = parseInt(req.params.departmentId);
-    try { 
-        const [students] = await db.query(`
-          SELECT students.id as id, concat(first_name, ' ', last_name) as name, 
-          first_name, last_name, registration_number as matric,
-          email, departments.name as department, levels.name as level, 
-          faculties.name as school
-          FROM students
-          JOIN departments ON students.department_id = departments.id
-          JOIN levels ON students.level_id = levels.id
-          JOIN faculties ON departments.faculty_id = faculties.id
-          WHERE department_id = ?`, [departmentId]);
-        return res.status(200).json({success: true, code: 200, students});
-    } catch (error) {
-        console.log('Error fetching students by department:', error);
-        return res.status(500).json({ success: false, code: 500, message: error.message });
+  const levelId = req.query.levelId ? parseInt(req.query.levelId) : null;
+  const departmentId = parseInt(req.query.departmentId);
+  if (!departmentId) {
+    return res.status(400).json({ success: false, code: 400, message: "Department required" });
+  }
+  try {
+    let query = `
+      SELECT students.id as id, concat(first_name, ' ', last_name) as name,
+      first_name, last_name, registration_number as matric,
+      email, departments.name as department,
+      faculties.name as school
+      FROM students
+      JOIN departments ON students.department_id = departments.id
+      JOIN faculties ON departments.faculty_id = faculties.id
+      WHERE department_id = ?`;
+    const params = [departmentId];
+    if (levelId) {
+      query += ' AND students.level_id = ?';
+      params.push(levelId);
     }
+    const [students] = await db.query(query, params);
+    if (!students.length) {
+      return res.status(404).json({ success: false, code: 404, message: 'No students found for this department' });
+    }
+    return res.status(200).json({ success: true, code: 200, students });
+  } catch (error) {
+    console.log('Error fetching students by department:', error);
+    return res.status(500).json({ success: false, code: 500, message: error.message });
+  }
 };

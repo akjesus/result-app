@@ -22,13 +22,27 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Tooltip,
 } from "@mui/material";
-import { Edit, Delete, UploadFile, Download } from "@mui/icons-material";
+import { Edit, Delete, UploadFile, Download, LockReset } from "@mui/icons-material";
 
 // Mock API imports (replace with actual API calls)
 import { getSchools, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
-import { getStudentsForDepartment, createStudent } from "../../api/students";
+import { getStudentsForDepartment, createStudent, resetStudentPassword } from "../../api/students";
+  // Reset password handler
+  const handleResetPassword = async (student) => {
+    if (window.confirm(`Are you sure you want to reset the password for ${student.name || student.matric}?`)) {
+      try {
+        const res = await resetStudentPassword(student.id);
+        console.log(res);
+        toast.success(`Password reset for ${student.name || student.matric}`);
+      } catch (err) {
+        console.log(err);
+        toast.error(err.response?.data?.message || 'Failed to reset password');
+      }
+    }
+  };
 
 export default function AdminStudents() {
   const handleDownloadSampleCSV = () => {
@@ -87,7 +101,6 @@ export default function AdminStudents() {
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [levels, setLevels] = useState([]);
-
   const [open, setOpen] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [newStudent, setNewStudent] = useState({
@@ -102,15 +115,13 @@ export default function AdminStudents() {
   // Filters
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("");
-  const [filterLevel, setFilterLevel] = useState("");
-
   // Pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
   const [selectedFaculty, setSelectedFaculty] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [studentsFetched, setStudentsFetched] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState("");
 
   // Fetch schools & departments
   useEffect(() => {
@@ -125,8 +136,8 @@ export default function AdminStudents() {
 
   // Fetch students only when button is clicked
   const handleFetchStudents = () => {
-    if (selectedFaculty && selectedDepartment) {
-      getStudentsForDepartment(selectedDepartment)
+    if (selectedFaculty && selectedDepartment && selectedLevel) {
+      getStudentsForDepartment(selectedDepartment, selectedLevel)
         .then((res) => {
           setStudents(res.data.students || []);
           setStudentsFetched(true);
@@ -167,10 +178,12 @@ export default function AdminStudents() {
     handleClose();
   };
 
-  const handleDelete = (index) => {
-    if (toast.info("Are you sure you want to delete this student?")) {
+  const handleDelete = (student, index) => {
+    console.log(student, index)
+     if (window.confirm(`Are you sure you want to delete ${student.name || student.matric}?`)) {
       const updated = students.filter((_, i) => i !== index);
       setStudents(updated);
+
     }
   };
 
@@ -178,8 +191,7 @@ export default function AdminStudents() {
   const filteredStudents = students.filter(
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) &&
-      (filterDept ? s.department === filterDept : true) &&
-      (filterLevel ? s.level === filterLevel : true)
+      (filterDept ? s.department === filterDept : true) 
   );
 
   return (
@@ -240,11 +252,31 @@ export default function AdminStudents() {
             ))}
           </Select>
         </FormControl>
+        <FormControl sx={{ minWidth: 220 }} size="small">
+          <InputLabel>Level</InputLabel>
+          <Select
+            value={selectedLevel}
+            label="Level"
+            onChange={e => {
+              setSelectedLevel(e.target.value);
+              setStudents([]);
+              setStudentsFetched(false);
+            }}
+          >
+            <MenuItem value="">Select Level</MenuItem>
+              <MenuItem key={1} value = {1} >100 Level</MenuItem>
+              <MenuItem key={2} value = {2} >200 Level</MenuItem>
+              <MenuItem key={3} value = {3} >300 Level</MenuItem>
+              <MenuItem key={4} value = {4} >400 Level</MenuItem>
+              <MenuItem key={5} value = {5} >500 Level</MenuItem>
+              <MenuItem key={6} value = {6} >600 Level</MenuItem>
+          </Select>
+        </FormControl>
         <Button
           variant="contained"
           sx={{ bgcolor: "#2C2C78" }}
           onClick={handleFetchStudents}
-          disabled={!selectedFaculty || !selectedDepartment}
+          disabled={!selectedFaculty || !selectedDepartment || !selectedLevel}
         >
           Fetch Students
         </Button>
@@ -252,17 +284,6 @@ export default function AdminStudents() {
       {/* Filters */}
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
         <TextField label="Search by name" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
-        <TextField
-          label="Filter by Level"
-          select
-          value={filterLevel}
-          onChange={(e) => setFilterLevel(e.target.value)}
-          size="small"
-          sx={{ minWidth: 220 }}
-        >
-          <MenuItem value="">All</MenuItem>
-          {levels.map((l) => (<MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>))}
-        </TextField>
       </Box>
 
       {/* Students Table */}
@@ -271,8 +292,6 @@ export default function AdminStudents() {
           <TableRow>
             <TableCell>Name</TableCell>
             <TableCell>Matric Number</TableCell>
-            <TableCell>Department</TableCell>
-            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Level</TableCell>
             <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -282,29 +301,42 @@ export default function AdminStudents() {
             <TableRow key={index}>
               <TableCell>{student.name}</TableCell>
               <TableCell>{student.matric}</TableCell>
-              <TableCell>{student.department}</TableCell>
-              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.level}</TableCell>
               <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{student.email}</TableCell>
               <TableCell sx={{ minWidth: 70, maxWidth: 90, p: { xs: 0.25, sm: 0.5 }, overflow: 'hidden', textAlign: 'center' }}>
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
-                  <IconButton
-                    color="primary"
-                    size="small"
-                    sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
-                    onClick={() => handleOpen(student, index)}
-                    aria-label="Edit Student"
-                  >
-                    <Edit fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    size="small"
-                    sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
-                    onClick={() => handleDelete(index)}
-                    aria-label="Delete Student"
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
+                <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                  <Tooltip title="Edit Student" arrow>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      sx={{ bgcolor: '#e3e3fa', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#d1d1f7' } }}
+                      onClick={() => handleOpen(student, index)}
+                      aria-label="Edit Student"
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete Student" arrow>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
+                      onClick={() => handleDelete(student, index)}
+                      aria-label="Delete Student"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Reset Password" arrow>
+                    <IconButton
+                      color="secondary"
+                      size="small"
+                      sx={{ bgcolor: '#e3f2fd', borderRadius: 2, p: 0.25, boxShadow: 1, ':hover': { bgcolor: '#bbdefb' } }}
+                      onClick={() => handleResetPassword(student)}
+                      aria-label="Reset Password"
+                    >
+                      <LockReset fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </TableCell>
             </TableRow>

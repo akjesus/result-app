@@ -114,9 +114,10 @@ export default function ResultManagement() {
         .then(res => setModalDepartments(res.data.departments || []))
         .catch(() => setModalDepartments([]));
       getSessionsWithSemesters()
-        .then(res => setModalSessions(res.data.sessions || []))
+        .then(res => {
+          setModalSessions(res.data.sessions || []);
+        })
         .catch(() => setModalSessions([]));
-      handleCloseModal()
     }
   }, [openCreateResultModal]);
 
@@ -309,7 +310,10 @@ export default function ResultManagement() {
                 size="small"
                 fullWidth
                 value={selectedSession}
-                onChange={e => setSelectedSession(e.target.value)}
+                onChange={e => {
+                  setSelectedSession(e.target.value)
+                  console.log(selectedSession)
+                }}
                 sx={{ flex: 1 }}
               >
                 <MenuItem value="">Select Session</MenuItem>

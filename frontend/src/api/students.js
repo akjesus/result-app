@@ -15,14 +15,19 @@ export const getStudents = () => {
           }
 })}
 
-export const getStudentsForDepartment = (id) => {
+export const getStudentsForDepartment = (department, level) => {
     const token = localStorage.getItem('token');
-    return axios.get(`${API_URL}/departments/${id}`, {
-    headers: {
-          'Content-Type': 'application/json',
-         'Authorization': `Bearer ${token}` 
-          }
-})};
+    return axios.get(`${API_URL}/departments`, {
+        params: {
+            departmentId: department,
+            levelId: level
+        },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+};
 
 export const createStudent = (data) => {
     const token = localStorage.getItem('token');
@@ -96,3 +101,18 @@ export const getCurrentGPA = () => {
             }
         }
 )};
+
+
+export const resetStudentPassword = (id) => {
+    const token = localStorage.getItem('token');
+    return axios.post(
+        `${API_URL}/${id}/reset-password`,
+        {},
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        }
+    );
+};
