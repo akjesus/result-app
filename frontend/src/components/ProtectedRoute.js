@@ -6,22 +6,27 @@ const ProtectedRoute = ({ children, roles }) => {
   const userRole = localStorage.getItem("role");
   const location = useLocation();
 
-  // Only allow /admin/staff for admin role
-  if (location.pathname.startsWith("/admin/staff")) {
-    if (userRole !== "admin") {
-      return <Navigate to="/login" />;
-    }
-    return children;
-  }
 
   // For other admin pages, allow staff and admin
   if (location.pathname.startsWith("/admin")) {
     if (userRole === "admin" || userRole === "staff") {
+      console.log(userRole, location)
       return children;
     }
     return <Navigate to="/login" />;
   }
 
+
+  // Only allow /admin/staff for admin role
+  if (location.pathname.startsWith("/admin/staff") || location.pathname.startsWith("/admin/settings")) {
+    if (userRole !== "admin") {
+      console.log(userRole, location)
+      return <Navigate to="/login" />;
+    }
+    return children;
+  }
+
+  
   // For student pages, allow only student
   if (location.pathname.startsWith("/student")) {
     if (userRole === "student") {

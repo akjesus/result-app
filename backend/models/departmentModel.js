@@ -18,7 +18,7 @@ class Department {
     static async createDepartment(name, faculty_id) {
     const [result] = await db.query(
       `INSERT INTO departments 
-      (name, created_at, updated_at)
+      (name, faculty_id, created_at, updated_at)
          VALUES (?, ?, NOW(), NOW())`,
         [name, faculty_id]
     );

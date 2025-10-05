@@ -1,14 +1,14 @@
 import React from "react";
 import { getDashboardStats } from "../../api/dashboard";
 import { useEffect, useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   Grid,
   Card,
   CardContent,
   Typography,
   Box,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import {
@@ -25,6 +25,7 @@ import {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   // Stats state
   const [stats, setStats] = useState([]);
@@ -33,7 +34,7 @@ export default function AdminDashboard() {
       .then((res) => {
         // Assuming API returns an object with keys matching the stat keys
         const data = res.data.dashboardData;
-        toast.success("Dashboard stats fetched successfully");
+        showSnackbar("Dashboard stats fetched successfully!", "success");
         // Map API response to stats array
         const statsArr = [
           { key: "totalStudents", label: "Total Students", value: data.totalStudents, path: "/admin/students" },
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
       })
       .catch((err) => {
         console.log(err.response.data.message || err)
-        toast.error(err.response.data.message || "Failed to fetch dashboard stats");
+        showSnackbar(`${err.response.data.message || "Failed to fetch dashboard stats"}`, "error");
       });
   }, []);
 
@@ -74,10 +75,16 @@ export default function AdminDashboard() {
   ];
 
   const COLORS = ["#2C2C78", "#4682B4", "#87CEEB", "#B0C4DE"];
+  function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
       Admin Dashboard
@@ -156,6 +163,17 @@ export default function AdminDashboard() {
           </Card>
         </Grid>
       </Grid>
+      {/* Snackbar */}
+            <Snackbar
+              open={snackbar.open}
+              autoHideDuration={3000}
+              onClose={handleCloseSnackbar}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
     </Box>
     </>
   );

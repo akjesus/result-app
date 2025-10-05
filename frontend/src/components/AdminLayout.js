@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
   Drawer,
@@ -9,7 +8,10 @@ import {
   ListItemText,
   Box,
   Toolbar,
-  Paper,Button
+  Paper,
+  Button,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Dashboard,
@@ -29,69 +31,121 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const drawerWidth = 240;
 
-const menuItems = [
-  { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
-  { text: "Students", icon: <People />, path: "/admin/students" },
-  { text: "Courses", icon: <Book />, path: "/admin/courses" },
-  { text: "Departments", icon: <Apartment />, path: "/admin/departments" },
-  { text: "Schools", icon: <School />, path: "/admin/schools" },
-  { text: "Results", icon: <BarChart />, path: "/admin/results" },
-  { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
-  { text: "Staff", icon: <PeopleOutline />, path: "/admin/staff" },
-  { text: "Grades", icon: <Grade />, path: "/admin/grades" },
-  { text: "Settings", icon: <Settings />, path: "/admin/settings" },
-];
+// ...existing code...
+
+const getMenuItems = (role) => {
+  if (role === "admin" || role === "superadmin") {
+    return [
+      { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+      { text: "Students", icon: <People />, path: "/admin/students" },
+      { text: "Courses", icon: <Book />, path: "/admin/courses" },
+      { text: "Departments", icon: <Apartment />, path: "/admin/departments" },
+      { text: "Schools", icon: <School />, path: "/admin/schools" },
+      { text: "Results", icon: <BarChart />, path: "/admin/results" },
+      { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
+      { text: "Staff", icon: <PeopleOutline />, path: "/admin/staff" },
+      { text: "Grades", icon: <Grade />, path: "/admin/grades" },
+      { text: "Settings", icon: <Settings />, path: "/admin/settings" },
+    ];
+  } else if (role === "staff") {
+    return [
+      { text: "Dashboard", icon: <Dashboard />, path: "/admin/dashboard" },
+      { text: "Students", icon: <People />, path: "/admin/students" },
+      { text: "Courses", icon: <Book />, path: "/admin/courses" },
+      { text: "Departments", icon: <Apartment />, path: "/admin/departments" },
+      { text: "Schools", icon: <School />, path: "/admin/schools" },
+      { text: "Results", icon: <BarChart />, path: "/admin/results" },
+      { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
+    ];
+  }
+  return [];
+};
+
 
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [role, setRole] = useState(localStorage.getItem("role"));
+  const [menuItems, setMenuItems] = useState(getMenuItems(role));
+
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const newRole = localStorage.getItem("role");
+      setRole(newRole);
+      setMenuItems(getMenuItems(newRole));
+    };
+    window.addEventListener("storage", handleStorageChange);
+    // In case role changes in same tab (e.g. after login/logout)
+    const interval = setInterval(() => {
+      const currentRole = localStorage.getItem("role");
+      if (currentRole !== role) {
+        setRole(currentRole);
+        setMenuItems(getMenuItems(currentRole));
+      }
+    }, 500);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [role]);
+
+  function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleLogout = () => {
+    showSnackbar("Logging Out....", "info");
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    setTimeout(() => { navigate("/login")}, 1500);
-    setTimeout(() => { toast.info("Logged Out!")}, 2000);
-    
+    setTimeout(() => {
+      setRole(null);
+      setMenuItems([]);
+      navigate("/login");
+    }, 1500);
   };
 
   return (
     <>
-    <ToastContainer/>
-    <Box sx={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar toggle button for mobile */}
-      <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
-        <Button
-          variant="contained"
-          sx={{ minWidth: 0, p: 1, bgcolor: "#2C2C78" }}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
-        </Button>
-      </Box>
-      {/* Sidebar */}
-      <Drawer
-        variant={sidebarOpen ? "temporary" : "permanent"}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          display: { xs: sidebarOpen ? "block" : "none", md: "block" },
-          "& .MuiDrawer-paper": {
+      <Box sx={{ display: "flex", height: "100vh" }}>
+        {/* Sidebar toggle button for mobile */}
+        <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
+          <Button
+            variant="contained"
+            sx={{ minWidth: 0, p: 1, bgcolor: "#2C2C78" }}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+          </Button>
+        </Box>
+        {/* Sidebar */}
+        <Drawer
+          variant={sidebarOpen ? "temporary" : "permanent"}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          sx={{
             width: drawerWidth,
-            backgroundColor: "#87CEEB",
-            color: "white",
-          },
-        }}
-      >
-        <Toolbar />
-        <List>
-          {menuItems.map((item) => (
-            <ListItem
-              button
-              key={item.text}
-              component={Link}
+            flexShrink: 0,
+            display: { xs: sidebarOpen ? "block" : "none", md: "block" },
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              backgroundColor: "#87CEEB",
+              color: "white",
+            },
+          }}
+        >
+          <Toolbar />
+          <List>
+            {menuItems.map((item) => (
+              <ListItem
+                button
+                key={item.text}
+                component={Link}
               to={item.path}
               sx={{
                 backgroundColor:
@@ -148,6 +202,17 @@ const AdminLayout = () => {
         </Paper>
       </Box>
     </Box>
+    {/* Snackbar */}
+                    <Snackbar
+                      open={snackbar.open}
+                      autoHideDuration={3000}
+                      onClose={handleCloseSnackbar}
+                      anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    >
+                      <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                        {snackbar.message}
+                      </Alert>
+                    </Snackbar>
     </>
   );
 };

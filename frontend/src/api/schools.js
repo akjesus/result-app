@@ -93,6 +93,26 @@ export const getCoursesWithResults = () => {
 })};
 
 
-export const addSchool = (data) => axios.post(`${BASE_URL}/schools/faculties`, data);
+export const addSchool = (data) => {
+    const token = localStorage.getItem('token')
+    return axios.post(`${BASE_URL}/schools/faculties`, {
+        name: data.name
+    }, {
+        headers: {
+        'Content-Type': 'application/json',
+         'Authorization': `Bearer ${token}`
+        }
+    })
+};
 export const updateSchool = (id, data) => axios.put(`${BASE_URL}/schools/faculties/${id}`, data);
-export const deleteSchool = (id) => axios.delete(`${BASE_URL}/schools/faculties/${id}`);
+
+
+export const deleteSchool = (id) => {
+    const token = localStorage.getItem('token')
+    return axios.delete(`${BASE_URL}/schools/faculties/${id}`, {
+        headers: {
+        'Content-Type': 'application/json',
+         'Authorization': `Bearer ${token}`
+        }
+    })
+};

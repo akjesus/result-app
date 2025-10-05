@@ -1,5 +1,3 @@
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -23,6 +21,8 @@ import {
   InputLabel,
   Select,
   Tooltip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Delete, UploadFile, Download, LockReset } from "@mui/icons-material";
 
@@ -31,18 +31,7 @@ import { getSchools, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
 import { getStudentsForDepartment, createStudent, resetStudentPassword } from "../../api/students";
   // Reset password handler
-  const handleResetPassword = async (student) => {
-    if (window.confirm(`Are you sure you want to reset the password for ${student.name || student.matric}?`)) {
-      try {
-        const res = await resetStudentPassword(student.id);
-        console.log(res);
-        toast.success(`Password reset for ${student.name || student.matric}`);
-      } catch (err) {
-        console.log(err);
-        toast.error(err.response?.data?.message || 'Failed to reset password');
-      }
-    }
-  };
+  
 
 export default function AdminStudents() {
   const handleDownloadSampleCSV = () => {
@@ -81,23 +70,22 @@ export default function AdminStudents() {
       });
       const result = await response.json();
       if (response.ok) {
-        toast.info(result.message || 'Bulk upload successful!');
+        showSnackbar(result.message || 'Bulk upload successful!', "success");
         // Optionally, refresh students list
         fetch('/api/students')
           .then((res) => res.json())
           .then((data) => setStudents(data.users || []));
       } else {
-        toast.error(result.error || 'Bulk upload failed!');
+        showSnackbar(result.error || 'Bulk upload failed!', "error");
       }
     } catch (err) {
-      toast.error('Bulk upload failed!');
+      showSnackbar('Bulk upload failed!', "error");
       console.log(err);
     }
   };
 
   // Fetch students from API and setStudents
   const [students, setStudents] = useState([]);
-
   const [schools, setSchools] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [levels, setLevels] = useState([]);
@@ -122,7 +110,27 @@ export default function AdminStudents() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [studentsFetched, setStudentsFetched] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState("");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  
 
+  function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+const handleResetPassword = async (student) => {
+    if (window.confirm(`Are you sure you want to reset the password for ${student.name || student.matric}?`)) {
+      try {
+        await resetStudentPassword(student.id);
+        showSnackbar(`Password reset for ${student.name || student.matric}`, "success");
+      } catch (err) {
+        console.log(err);
+        showSnackbar(err.response?.data?.message || 'Failed to reset password',"error");
+      }
+    }
+  };
   // Fetch schools & departments
   useEffect(() => {
     getSchools().then((res) => setSchools(res.data.schools || res.data.faculties || [])).catch(console.error);
@@ -131,7 +139,7 @@ export default function AdminStudents() {
     then((res)=> {
       setLevels(res.data.levels)}
     ).
-    catch(error=> toast.error(error.message))
+    catch(error=> showSnackbar(error.message, "error"))
   }, []);
 
   // Fetch students only when button is clicked
@@ -141,14 +149,14 @@ export default function AdminStudents() {
         .then((res) => {
           setStudents(res.data.students || []);
           setStudentsFetched(true);
-          toast.success(`Students fetched for ${res.data.students[0].department || 'department'}`);
+          showSnackbar(`Students fetched for ${res.data.students[0].department } Department`, "success");
         })
         .catch((error) => {
           console.log(error)
-          toast.error(error.response?.data?.message || error);
+          showSnackbar(error.response?.data?.message || error, "error");
         });
     } else {
-      toast.info("Please select both faculty and department.");
+      showSnackbar("Please select both faculty and department.", "info");
     }
   };
 
@@ -196,7 +204,6 @@ export default function AdminStudents() {
 
   return (
     <>
-    <ToastContainer />
         <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
           <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
           Manage Students
@@ -362,7 +369,7 @@ export default function AdminStudents() {
               <TextField margin="dense" label="First Name" name="first_name" fullWidth value={newStudent.first_name} onChange={handleChange} sx={{ flex: 1 }} />
               <TextField margin="dense" label="Last Name" name="last_name" fullWidth value={newStudent.last_name} onChange={handleChange} sx={{ flex: 1 }} />
             </Box>
-            <TextField margin="dense" label="Matric Number" name="matric" fullWidth value={newStudent.matric} onChange={handleChange} />
+            <TextField margin="dense" label="Email Address" name="email" type = "email" fullWidth value={newStudent.email} onChange={handleChange} />
             <Box display="flex" gap={2}>
               <FormControl fullWidth margin="dense" sx={{ flex: 1 }}>
                 <InputLabel>Faculty</InputLabel>
@@ -385,7 +392,7 @@ export default function AdminStudents() {
                   {levels.map((l) => (<MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>))}
                 </Select>
               </FormControl>
-              <TextField margin="dense" label="Email" name="email" type="email" fullWidth value={newStudent.email} onChange={handleChange} sx={{ flex: 1 }} />
+              <TextField margin="dense" label="Matric NO" name="matric" type="text" fullWidth value={newStudent.matric} onChange={handleChange} sx={{ flex: 1 }} />
             </Box>
           </Box>
         </DialogContent>
@@ -395,6 +402,17 @@ export default function AdminStudents() {
         </DialogActions>
       </Dialog>
     </Box>
+    {/* Snackbar */}
+      <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    {snackbar.message}
+          </Alert>
+      </Snackbar>
     </>
   );
 }

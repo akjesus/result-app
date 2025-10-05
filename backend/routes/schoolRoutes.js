@@ -5,20 +5,25 @@ const restrictTo = require('../controllers/authController').restrictTo;
 const verifyToken = require('../controllers/authController').verifyToken;
 router.use(verifyToken); // Protect all routes after this middleware
 
-router.use(restrictTo('admin'));
-router.post('/semesters/:id/activate', restrictTo('admin'), schoolController.activateSemester);
 
-router.use(restrictTo( 'admin', 'staff'));
+
+
+router.use(restrictTo( 'staff', "admin", "superadmin"));
 router.get('/departments', schoolController.getAllDepartments);
 router.get('departments/:id', schoolController.getDepartmentById);
-router.post('/departments', restrictTo('admin'), schoolController.createDepartment);
-router.put('/departments/:id', restrictTo('admin'), schoolController.updateDepartment);
-router.delete('/departments/:id', restrictTo('admin'), schoolController.deleteDepartment);
+router.post('/departments', schoolController.createDepartment);
+router.put('/departments/:id', schoolController.updateDepartment);
 router.get('/faculties', schoolController.getAllFaculties);
+router.post('/faculties', schoolController.createFaculty);
 router.get('/faculties/:id', schoolController.getFacultyById);
 router.get('/sessions/:id/semesters', schoolController.getSemestersForSession);
 router.get('/sessions', schoolController.getSessions);
 router.get('/levels', schoolController.getLevels);
+
+router.use(restrictTo('admin'));
+router.post('/semesters/:id/activate', schoolController.activateSemester);
+router.delete('/faculties/:id', schoolController.deleteFaculty);
+router.delete('/departments/:id', schoolController.deleteDepartment);
 
 
 

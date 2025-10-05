@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { getSchools, addSchool, updateSchool, deleteSchool } from "../../api/schools";
 import {
   Box,
@@ -50,11 +48,11 @@ export default function SchoolsPage() {
     getSchools()
       .then(res => {
         setSchools(res.data.schools)
-        toast.success("Schools Fetched!")
+        showSnackbar("Schools Fetched!")
       })
       .catch(err => {
         console.error(err);
-        toast.error(err.response?.data?.message || "Failed to fetch schools");
+        showSnackbar(`${err.response?.data?.message || "Failed to fetch schools"}`, "error");
       });
 
   };
@@ -64,19 +62,21 @@ export default function SchoolsPage() {
       updateSchool(editingSchool.id, data)
         .then(() => {
           reset();
+          showSnackbar("School updated successfully!", "success");
           setEditingSchool(null);
           setOpenDialog(false);
           fetchSchools();
-          showSnackbar("School updated successfully!", "success");
+          
         })
         .catch(() => showSnackbar("Failed to update school", "error"));
     } else {
       addSchool(data)
         .then(() => {
           reset();
+          showSnackbar("School added successfully!");
           setOpenDialog(false);
           fetchSchools();
-          showSnackbar("School added successfully!", "success");
+         
         })
         .catch(() => showSnackbar("Failed to add school", "error"));
     }
@@ -92,8 +92,9 @@ export default function SchoolsPage() {
     if (window.confirm("Are you sure you want to delete this school?")) {
       deleteSchool(id)
         .then(() => {
-          fetchSchools();
           showSnackbar("School deleted successfully!", "success");
+          fetchSchools();
+          
         })
         .catch(() => showSnackbar("Failed to delete school", "error"));
     }
@@ -114,7 +115,6 @@ export default function SchoolsPage() {
 
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
           <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
           Schools / Faculties
