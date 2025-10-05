@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { getDepartments } from "../../api/departments";
-import { getCoursesWithResults } from "../../api/schools";
 import {
   Box,
   Typography,
@@ -16,14 +15,11 @@ import {
   Paper,
   TablePagination,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import UploadResultsModal from "./UploadResultsModal";
 
 export default function TranscriptManagement() {
@@ -31,27 +27,29 @@ export default function TranscriptManagement() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [departments, setDepartments] = useState([]);
-  const [coursesWithResults, setCoursesWithResults] = useState([]);
   const [openUploadModal, setOpenUploadModal] = useState(false);
-  const [showCoursesWithResults, setShowCoursesWithResults] = useState(false);
   const navigate = useNavigate();
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: "", severity: "success" });
+
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   useEffect(() => {
     getDepartments()
       .then(res => {
         setDepartments(res.data.departments);
+        showSnackbar("Departments Fetched!");
       })
       .catch(err => console.error(err));
   }, []);
 
   // Fetch courses with uploaded results from backend
-  useEffect(() => {
-    getCoursesWithResults()
-      .then(res => {
-        setCoursesWithResults(res.data.courses);
-      })
-      .catch(err => console.error(err));
-  }, []);
+
 
   const filteredDepartments = departments.filter(
     (departments) =>
@@ -61,7 +59,6 @@ export default function TranscriptManagement() {
   
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       {/* Header */}
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
@@ -162,6 +159,16 @@ export default function TranscriptManagement() {
       {/* Upload Results Modal */}
       <UploadResultsModal open={openUploadModal} handleClose={() => setOpenUploadModal(false)} />
     </Box>
+       <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+              >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                  {snackbar.message}
+                </Alert>
+              </Snackbar>
     </>
   );
 }

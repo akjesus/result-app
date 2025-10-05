@@ -26,6 +26,27 @@ exports.getAllFaculties = async (req, res) => {
     }       
 };
 
+exports.createFaculty = async (req, res) => {
+    const {name} = req.body
+    try {
+        const faculty = await Faculty.createFaculty(name);
+        return res.status(200).json({ success: true, code: 200, message: "Faculty Created Successfully!", faculty});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+}
+
+exports.deleteFaculty = async (req, res) => {
+    const {id} = req.params
+    try {
+        const faculty = await Faculty.deleteFaculty(id);
+        return res.status(200).json({ success: true, code: 200, message: "Faculty deleted Successfully!"});
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, code: 500, message: error.message });
+    }
+}
 // Get a single department by ID
 exports.getDepartmentById = async (req, res) => {
     const departmentId = parseInt(req.params.id);

@@ -1,8 +1,6 @@
 // src/pages/Auth/Login.js
 import React, { useState } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   Box,
   Button,
@@ -12,6 +10,8 @@ import {
   CardContent,
   TextField,
   Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,16 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+    const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+    
+  
+    function showSnackbar(message, severity) {
+      setSnackbar({ open: true, message, severity });
+    }
+  
+    const handleCloseSnackbar = () => {
+      setSnackbar({ ...snackbar, open: false });
+    };
 
   
   const handleSubmit = async (e) => {
@@ -39,14 +49,14 @@ function Login() {
         localStorage.setItem("role", res.data.role);
 
         // Redirect based on role
-        if (res.data.role === "admin") {
-          toast.success(res.data.message);
+        if (res.data.role === "admin" || res.data.role === "staff") {
+          showSnackbar(res.data.message, "success");
           setTimeout(() => {navigate("/admin/dashboard")}, 1500);
         } else if (res.data.role === "student") {
-          toast.success(res.data.message);
+          showSnackbar(res.data.message, "success");
           setTimeout(() => {navigate("/student/dashboard")}, 1500);
         } else {
-          toast.error(res.data.message)
+          showSnackbar(res.data.message, "error")
           setTimeout(() => {navigate("/")}, 1500);
           // fallback
         }
@@ -60,10 +70,10 @@ function Login() {
         } else if (message.includes("password")) {
           setError((prev) => ({ ...prev, password: message }));
         } else {
-          toast.error(message);
+         showSnackbar(message, "error");
         }
       } else {
-        toast.warning(err.response.data.message || err);
+       showSnackbar("Server Unreachable!", "error");
       }
     }
   };
@@ -71,7 +81,6 @@ function Login() {
 
   return (
     <>
-    <ToastContainer/>
     <Box
       sx={{
         backgroundImage:
@@ -153,6 +162,17 @@ function Login() {
         </CardContent>
       </Card>
     </Box>
+    {/* Snackbar */}
+                <Snackbar
+                  open={snackbar.open}
+                  autoHideDuration={3000}
+                  onClose={handleCloseSnackbar}
+                  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                  <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    {snackbar.message}
+                  </Alert>
+                </Snackbar>
     </>
   );
 }

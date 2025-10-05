@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import NotFound from "../pages/NotFound";
 import Login from "../pages/Auth/Login";
 import ProtectedRoute from "./ProtectedRoute";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
@@ -35,10 +36,23 @@ const AppRouter = () => (
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Admin Routes (protected + wrapped in AdminLayout) */}
+        <Route
+        path="/admin"
+        element={
+          <ProtectedRoute roles={["admin", "superadmin"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+
+        <Route path="staff" element={<StaffSettings />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
+
       <Route
         path="/admin"
         element={
-          <ProtectedRoute roles={["admin"]}>
+          <ProtectedRoute roles={["admin", "staff", "superadmin"]}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -74,6 +88,8 @@ const AppRouter = () => (
          <Route path="settings" element={<Settings />} />
   "
       </Route>
+      {/* Catch-all route for 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </BrowserRouter>
 );

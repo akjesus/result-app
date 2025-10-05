@@ -5,26 +5,32 @@ const restrictTo = require("../controllers/authController").restrictTo;
 
 router.use(verifyToken); // Protect all routes after this middleware
 
-
-
+router.use(restrictTo("superadmin", "admin", "staff", "student"));
 
 router.get('/student', resultController.getResultsByStudent);
 router.get('/courses', resultController.getCoursesWithResults);
-router.get('/course/:id', restrictTo("admin", "staff"), resultController.getResultsByCourse);
-router.get('/department/:id', restrictTo("admin", "staff"), resultController.getResultsByDepartment);
-router.get('/department/:deptId/level/:levelId', restrictTo("admin", "staff"), resultController.getResultsByDepartmentAndLevel);
-router.get('/cgpa', restrictTo('admin', 'staff'), resultController.calculateAllCGPA);
-router.get('/departments/:id', restrictTo('admin', 'staff'), resultController.getallResultsforDepartment);
-router.put("/batch-update", restrictTo("admin"), resultController.batchUpdateResults);
-router.get('/cgpa/highest-lowest', restrictTo('admin', 'staff'), resultController.getHighestandLowestCGPA);
-router.get('/cgpa/:studentId', restrictTo('admin', 'staff', 'student'), resultController.calculateCGPA);
-router.post("/bulk-upload", restrictTo("admin"), resultController.bulkUploadResults);
-router.get("/", restrictTo("admin", "staff"), resultController.getAllResults);
-router.post("/", restrictTo("admin"), resultController.createResult);
-router.get("/:id", restrictTo("admin", "staff"), resultController.getResultById);
-router.put("/:id", restrictTo("admin"), resultController.updateResult);
-router.delete("/:id", restrictTo("admin"), resultController.deleteResult);
+router.get('/cgpa/:studentId', resultController.calculateCGPA);
 
+router.use(restrictTo("superadmin", "admin", "staff"));
+
+router.get('/course/:id', resultController.getResultsByCourse);
+router.get('/department/:id', resultController.getResultsByDepartment);
+router.get('/department/:deptId/level/:levelId', resultController.getResultsByDepartmentAndLevel);
+router.get('/cgpa',  resultController.calculateAllCGPA);
+router.get('/departments/:id',  resultController.getallResultsforDepartment);
+router.get('/cgpa/highest-lowest',  resultController.getHighestandLowestCGPA);
+router.get("/",  resultController.getAllResults);
+router.get("/:id",  resultController.getResultById);
+
+router.use(restrictTo("superadmin", "admin"));
+
+router.put("/:id", resultController.updateResult);
+router.post("/", resultController.createResult);
+router.put("/batch-update", resultController.batchUpdateResults);
+router.post("/bulk-upload", resultController.bulkUploadResults);
+
+router.use(restrictTo("superadmin"));
+router.delete("/:id", resultController.deleteResult);
 
 
 

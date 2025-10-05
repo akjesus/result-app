@@ -13,6 +13,25 @@ export const getDepartments = () => {
         }
     });
 };
-export const addDepartment = (data) => axios.post(API_URL, data);
+export const addDepartment = (data) => {
+    const token = localStorage.getItem('token');
+    return axios.post(API_URL, {
+        name: data.name, faculty_id: data.school
+    }, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+};
 export const updateDepartment = (id, data) => axios.put(`${API_URL}/${id}`, data);
-export const deleteDepartment = (id) => axios.delete(`${API_URL}/${id}`);
+
+export const deleteDepartment = (id) => {
+    const token = localStorage.getItem('token');
+    return axios.delete(`${API_URL}/${id}`, {
+        headers : {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+}

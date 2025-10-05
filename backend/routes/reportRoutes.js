@@ -5,12 +5,8 @@ const restrictTo = require('../controllers/authController').restrictTo;
 const verifyToken = require('../controllers/authController').verifyToken;
 router.use(verifyToken); // Protect all routes after this middleware
 
+router.use(restrictTo('admin', 'superadmin', 'staff'))
+router.get('/course/:courseId', reportController.getGradeDistributionByCourse);
 
-// router.get('/department/:deptId/level/:levelId', restrictTo('admin', 'superadmin', 'staff'), reportController.getReportByDepartmentAndLevel);
-// router.get('/faculty/:facultyId', restrictTo('admin', 'superadmin', 'staff'), reportController.getReportByFaculty);
-// router.get('/school', restrictTo('admin', 'superadmin', 'staff'), reportController.getReportBySchool);
-router.get('/course/:courseId', restrictTo('admin', 'superadmin', 'staff'), reportController.getGradeDistributionByCourse);
-// router.get('/level/:levelId', restrictTo('admin', 'superadmin', 'staff'), reportController.getReportByLevel);
-// router.get('/student/grade/:grade', restrictTo('admin', 'superadmin', 'staff'), reportController.getStudentResultsByGrade);
 
 module.exports = router;

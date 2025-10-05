@@ -26,6 +26,24 @@ class Faculty {
         );
         return result.affectedRows > 0;
     }
+     static async createFaculty( name) {
+        const [result] = await db.query(
+            `INSERT into faculties
+             (name)
+             values(?)
+            `, [name]
+        );
+        return result.affectedRows > 0;
+    }
+    
+    static async deleteFaculty( id) {
+        const [result] = await db.query(
+            `DELETE from faculties
+             where id = ?
+            `, [id]
+        );
+        return result.affectedRows > 0;
+    }
 
 }
 

@@ -23,11 +23,11 @@ import {
   DialogTitle,
   DialogContent,
   MenuItem,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Delete, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import UploadResultsModal from "./UploadResultsModal";
 
 export default function ResultManagement() {
@@ -50,7 +50,15 @@ export default function ResultManagement() {
   const [catScore, setCatScore] = useState("");
   const [examScore, setExamScore] = useState("");
   const navigate = useNavigate();
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+   
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
   useEffect(() => {
     getDepartments()
       .then(res => {
@@ -79,17 +87,17 @@ export default function ResultManagement() {
     createResult(data)
     .then(res => {
       if(res.data.success) {
-        toast.success("Result Created Successfully!");
+        showSnackbar("Result Created Successfully!");
         handleCloseModal()
       }
       else {
-        toast.info("There was an error!");
+        showSnackbar("There was an error!", "error");
         handleCloseModal()
       }
 
     })
     .catch(err => {
-      toast.error(err.response.data.message);
+      showSnackbar(err.response.data.message, "error");
        handleCloseModal()
     })
   }
@@ -155,7 +163,6 @@ export default function ResultManagement() {
 
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       {/* Header */}
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
@@ -312,7 +319,6 @@ export default function ResultManagement() {
                 value={selectedSession}
                 onChange={e => {
                   setSelectedSession(e.target.value)
-                  console.log(selectedSession)
                 }}
                 sx={{ flex: 1 }}
               >
@@ -370,6 +376,16 @@ export default function ResultManagement() {
         </DialogContent>
       </Dialog>
     </Box>
+    <Snackbar
+            open={snackbar.open}
+            autoHideDuration={3000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+              {snackbar.message}
+            </Alert>
+      </Snackbar>
     </>
   );
 }

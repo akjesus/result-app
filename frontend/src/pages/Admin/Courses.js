@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useEffect } from "react";
 import { getCourses, createCourse, getLevels } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 import {
   Box,
@@ -25,12 +23,22 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 
 // ✅ Departments List
 
 export default function AdminCourses() {
+   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+    function showSnackbar(message, severity) {
+      setSnackbar({ open: true, message, severity });
+    }
+  
+    const handleCloseSnackbar = () => {
+      setSnackbar({ ...snackbar, open: false });
+    };
   // Handle submit for creating a course
   const handleSubmitCourse = async () => {
     try {
@@ -45,15 +53,15 @@ export default function AdminCourses() {
       };
       const res = await createCourse(payload);
       if (res.data.success) {
-        toast.success("Course created successfully!");
+        showSnackbar("Course created successfully!", "success");
         handleClose();
       } else {
-        toast.error(res.data.message || "Failed to create course");
+        showSnackbar(res.data.message || "Failed to create course", "error");
       }
       // Optionally refresh courses list here
     } catch (err) {
       console.log(err);
-      toast.error(err.response?.data?.message || "Failed to create course");
+      showSnackbar(err.response?.data?.message || "Failed to create course", "error");
       handleClose();
     }
   };
@@ -75,16 +83,12 @@ export default function AdminCourses() {
   useEffect(() => {
     getCourses()
       .then((res) => {
-        toast.success("Courses and Departments Fetched!");
         setCourses(res.data.courses || []);
       })
       .catch(console.error);
-  }, []);
-
-  useEffect(() => {
     getLevels()
       .then((res) => {
-        toast.success("Levels Fetched!");
+        showSnackbar("Courses, Departments and Levels Fetched!", "success");
         setLevels(res.data.levels || []);
       })
       .catch(console.error);
@@ -177,7 +181,6 @@ export default function AdminCourses() {
 
   return (
     <>
-      <ToastContainer />
       <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
             Manage Courses 
@@ -209,7 +212,7 @@ export default function AdminCourses() {
               <TableCell sx={{ fontWeight: "bold" }}>Course Code</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Course Title</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Departments</TableCell>
-              <TableCell sx={{ fontWeight: "bold" }}>Levels</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Level</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Credit</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>active</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
@@ -378,6 +381,17 @@ export default function AdminCourses() {
           </DialogActions>
         </Dialog>
       </Box>
+      {/* Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={3000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                          {snackbar.message}
+                </Alert>
+            </Snackbar>
     </>
   );
 }

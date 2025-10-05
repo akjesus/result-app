@@ -13,14 +13,22 @@ import {
 Dialog,
 DialogTitle,
 DialogActions,
-DialogContent } from "@mui/material";
+DialogContent,
+Alert,
+Snackbar, } from "@mui/material";
 import { useEffect, useState } from "react";
 import { getStaff, deleteStaff, createStaff, resetPassword, updateStaff } from "../../api/staff";
 import { Edit, Delete, Visibility, LockReset } from "@mui/icons-material";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export default function StaffSettings() {
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+      function showSnackbar(message, severity) {
+        setSnackbar({ open: true, message, severity });
+      }
+    
+      const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+      };
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newStaff, setNewStaff] = useState({ first_name: '', last_name: '', email: '', role: '' });
   const handleCreateOpen = () => {
@@ -35,18 +43,18 @@ export default function StaffSettings() {
       const res = await createStaff(newStaff);
       if(res.data.success) {
         setStaff(prev => [...prev, res.data.staff]);
-        toast.success('Staff created successfully');
+        showSnackbar('Staff created successfully');
         setCreateModalOpen(false);
         return;
       }
       else {
-        toast.error(res.data.message || 'Failed to create staff');
+        showSnackbar(res.data.message || 'Failed to create staff', "error");
         return;
       }
 
     }
     catch(error) {
-      toast.error(error.response?.data?.message || 'Error creating staff');
+      showSnackbar(error.response?.data?.message || 'Error creating staff', "error");
       return;
     } 
   };
@@ -56,16 +64,16 @@ export default function StaffSettings() {
       try {
         const res = await resetPassword(staffMember.id);
         if(res.data.success) {
-          toast.success('Password reset successfully');
+          showSnackbar('Password reset successfully');
           return;
         }
         else {
-          toast.error(res.data.message || 'Failed to reset password');
+          showSnackbar(res.data.message || 'Failed to reset password');
           return;
         }
       }
       catch(error) {
-        toast.error(error.response?.data?.message || 'Error resetting password');
+        showSnackbar(error.response?.data?.message || 'Error resetting password,"error');
       }
     }
   };
@@ -104,19 +112,19 @@ export default function StaffSettings() {
       const res = await updateStaff(selectedStaff, selectedStaff.id);
       if(res.data.success) {
         setStaff(prev => prev.map(s => s.id === selectedStaff.id ? selectedStaff : s));
-        toast.success('Staff updated successfully');
+        showSnackbar('Staff updated successfully');
         setModalOpen(false);
         setSelectedStaff(null);
         return;
       }
       else {
-        toast.error(res.data.message || 'Failed to update staff');
+        showSnackbar(res.data.message || 'Failed to update staff', "error");
         return;
       }
 
     }
     catch(error) {
-      toast.error(error.response?.data?.message || 'Error updating staff');
+      showSnackbar(error.response?.data?.message || 'Error updating staff', "error");
       return;
     }
     
@@ -128,23 +136,22 @@ export default function StaffSettings() {
         const res = await deleteStaff(staffMember.id);
         if(res.data.success) {
           setStaff(staff.filter(s => s.id !== staffMember.id));
-          toast.success('Staff deleted successfully');
+          showSnackbar('Staff deleted successfully');
           return;
         }
         else {
-          toast.error(res.data.message || 'Failed to delete staff');
+          showSnackbar(res.data.message || 'Failed to delete staff', "error");
           return;
         }
       }
       catch(error) {
-        toast.error(error.response?.data?.message || 'Error deleting staff');
+        showSnackbar(error.response?.data?.message || 'Error deleting staff', "error");
       }
     }
   };
 
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
         Staff Management
@@ -314,6 +321,16 @@ export default function StaffSettings() {
         </DialogActions>
       </Dialog>
     </Box>
+    <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                              {snackbar.message}
+                    </Alert>
+                </Snackbar>
     </>
   );
 }

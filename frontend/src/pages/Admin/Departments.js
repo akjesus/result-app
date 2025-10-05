@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getDepartments, addDepartment, updateDepartment, deleteDepartment } from "../../api/departments";
 import { getSchools } from "../../api/schools";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 import {
   Box,
@@ -47,7 +45,13 @@ export default function DepartmentsPage() {
 
   // Notifications
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+ function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
 
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
   useEffect(() => {
     fetchDepartments();
     fetchSchools();
@@ -56,7 +60,7 @@ export default function DepartmentsPage() {
   function fetchDepartments() {
     getDepartments()
       .then(res => {
-        toast.success("Departments Fetched!");
+        showSnackbar("Departments Fetched!", "success");
         setDepartments(res.data.departments)
       })
       .catch(err => console.error(err));
@@ -75,19 +79,19 @@ export default function DepartmentsPage() {
           reset();
           setEditingDept(null);
           setOpenDialog(false);
-          fetchDepartments();
           showSnackbar("Department updated successfully!", "success");
+          fetchDepartments();
         })
-        .catch(err => showSnackbar("Failed to update department", "error"));
+        .catch(err => showSnackbar(`Failed to update department: ${err.response.data.message || ""}`, "error"));
     } else {
       addDepartment(data)
         .then(() => {
           reset();
           setOpenDialog(false);
-          fetchDepartments();
           showSnackbar("Department added successfully!", "success");
+          fetchDepartments();
         })
-        .catch(err => showSnackbar("Failed to add department", "error"));
+        .catch(err => showSnackbar(`Failed to add department: ${err.response.data.message || ""} `, "error"));
     }
   }
 
@@ -102,20 +106,14 @@ export default function DepartmentsPage() {
     if (window.confirm("Are you sure you want to delete this department?")) {
       deleteDepartment(id)
         .then(() => {
-          fetchDepartments();
           showSnackbar("Department deleted successfully!", "success");
+          fetchDepartments();
         })
         .catch(err => showSnackbar("Failed to delete department", err.message || "error"));
     }
   }
 
-  function showSnackbar(message, severity) {
-    setSnackbar({ open: true, message, severity });
-  }
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+ 
 
   // Filtered & paginated departments
  const filtered = departments.filter(dept => {
@@ -128,9 +126,10 @@ export default function DepartmentsPage() {
   const paginated = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   const pageCount = Math.ceil(filtered.length / rowsPerPage);
 
+  
+
   return (
     <>
-    <ToastContainer />
     <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
           <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
           Manage Departments
@@ -159,7 +158,7 @@ export default function DepartmentsPage() {
         <Table>
           <TableHead>
             <TableRow>
-                           <TableCell><strong>Name</strong></TableCell>
+              <TableCell><strong>Name</strong></TableCell>
               <TableCell><strong>School</strong></TableCell>
               <TableCell align="right"><strong>Actions</strong></TableCell>
             </TableRow>
@@ -229,7 +228,7 @@ export default function DepartmentsPage() {
               <InputLabel>School / Faculty</InputLabel>
               <Select {...register("school", { required: true })} defaultValue={editingDept?.school || ""}>
                 {schools.map(school => (
-                  <MenuItem key={school.id} value={school.name}>{school.name}</MenuItem>
+                  <MenuItem key={school.id} value={school.id}>{school.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>

@@ -13,39 +13,18 @@ import {
   TableBody,
   TextField,
   Box,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
 import {updateResults} from "../../api/results";
-import { toast, ToastContainer } from "react-toastify";
 
-// Function to handle save after editing
-function handleSaveEdit(editStudent, onSave) {
-  // Log the edited data for analysis
-  const editedResults = editStudent.courses_info;
-  console.log(editedResults);
-  if (onSave) {
-    onSave(editStudent);
-  }
-  //send the data to endpoint 
-  updateResults(editedResults)
-    .then(res => {
-      if (res.data.success) { 
-        toast.success("Results updated successfully");
-      } else {
-        toast.error(res.data.message || "Failed to update results");
-        console.log(res.data);
-      }
-    })
-    .catch(err => {
-      toast.error(err.response.data.message   || "Error updating results");
-      console.log(err.response.data);
-    });
-
-}
 
 export default function ResultModal({ open, handleClose, student, editMode = false, onSave }) {
+  
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: "", severity: "success" });
   const [editStudent, setEditStudent] = React.useState(
     student ? {
       ...student,
@@ -65,6 +44,35 @@ export default function ResultModal({ open, handleClose, student, editMode = fal
     });
   }, [student]);
   if (!student) return null;
+
+const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  function handleSaveEdit(editStudent, onSave) {
+  // Log the edited data for analysis
+  const editedResults = editStudent.courses_info;
+  if (onSave) {
+    onSave(editStudent);
+  }
+  //send the data to endpoint 
+  updateResults(editedResults)
+    .then(res => {
+      if (res.data.success) { 
+        showSnackbar("Results updated successfully");
+      } else {
+        showSnackbar(res.data.message || "Failed to update results", "error");
+      }
+    })
+    .catch(err => {
+      showSnackbar(err.response.data.message   || "Error updating results", );
+    });
+
+}
 
   // Support both shapes for student info
   const name = student.name || student.student_name || '';
@@ -144,7 +152,6 @@ export default function ResultModal({ open, handleClose, student, editMode = fal
 
   return (
     <>
-      <ToastContainer />
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: "bold", color: "#2C2C78" }}>
         {editMode ? 'Edit Student Result' : 'Student Result'}
@@ -287,6 +294,16 @@ export default function ResultModal({ open, handleClose, student, editMode = fal
         </Button>
       </DialogActions>
     </Dialog>
+    <Snackbar
+            open={snackbar.open}
+            autoHideDuration={3000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
     </>
   );
 }
