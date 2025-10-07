@@ -30,7 +30,6 @@ export const getResultsByDepartment2 = (departmentId) => {
   });
 };
 
-  
 
 export const bulkUploadResults = (formData) => {
   const token = localStorage.getItem('token');

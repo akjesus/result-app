@@ -4,7 +4,6 @@ import axios from "axios";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api";
 // Always get token inside each function
 
-
 export const getSchools = () => {
     const token = localStorage.getItem('token');
     return axios.get(`${BASE_URL}/schools/faculties`, {
@@ -63,6 +62,16 @@ export const createCourse = (data) => {
     'Authorization': `Bearer ${token}`
   }
 })};
+
+export const deleteCourse = (id) => {
+    const token = localStorage.getItem('token');
+    return axios.delete(`${BASE_URL}/courses/${id}`, {
+        headers: {
+        'Content-Type': 'application/json',
+         'Authorization': `Bearer ${token}`
+        }
+})
+}
 
 export const updateCourse = (data) => {
      const token = localStorage.getItem('token');

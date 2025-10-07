@@ -69,7 +69,7 @@ export default function UploadResultsModal({ open, handleClose }) {
       setSemesters([]);
     }
   }, [session, sessions]);
-
+  
   const handleUpload = async () => {
     if (!file || !course || !semester || !session) return;
     const formData = new FormData();

@@ -47,9 +47,10 @@ function Login() {
         // Save token & role in localStorage/session
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("role", res.data.role);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
 
         // Redirect based on role
-        if (res.data.role === "admin" || res.data.role === "staff") {
+        if (res.data.role === "admin" || res.data.role === "staff" || res.data.role === "superadmin") {
           showSnackbar(res.data.message, "success");
           setTimeout(() => {navigate("/admin/dashboard")}, 1500);
         } else if (res.data.role === "student") {

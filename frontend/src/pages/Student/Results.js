@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getSessions, getLevels } from "../../api/schools";
 import {getResults} from "../../api/students";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import exoFont from "../../assets/exo.ttf"; 
 import {
   Container,
@@ -17,6 +15,8 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -24,6 +24,14 @@ import logo from "../../assets/maduka-logo.png";
 import stamp from "../../assets/stamp.png"; 
 
 export default function StudentResults() {
+const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+      function showSnackbar(message, severity) {
+        setSnackbar({ open: true, message, severity });
+      }
+    
+      const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+      };
   const [formData, setFormData] = useState({
     session: "",
     level: "",
@@ -49,7 +57,7 @@ export default function StudentResults() {
         setLevels(res.data.levels || []);
       })
       .catch((error=> {
-       toast.error(error.response.data.message);
+       showSnackbar(error.response.data.message, "error");
       }));
   }, []);
 
@@ -75,16 +83,17 @@ export default function StudentResults() {
     getResults(formData)
     .then(res=> {
       if(res.data.results) {
-        toast.success("Results retrieved successfully!");
+        showSnackbar("Results retrieved successfully!", "success");
         setResults(res.data.results);
+        console.log(res.data.student);
         setStudent(res.data.student);
         return;
       }
-      toast.info(res.data.message)
+      showSnackbar(res.data.message, "info");
       setResults([]);
     })
     .catch(error=> {
-      toast.error(error.response.data.message);
+      showSnackbar(error.response.data.message, "error");
       setResults([]);
     })
    
@@ -171,17 +180,16 @@ export default function StudentResults() {
       cgpaComment = 'FIRST CLASS';
     }
     doc.setFontSize(13);
-    doc.text(`Comment: ${cgpaComment}`, 14, y + 7);
+    doc.text(`Result: ${cgpaComment}`, 14, y + 7);
     doc.setTextColor(0, 0, 0);
     doc.addImage(stamp, "PNG", 110, y, 52, 35);
 
     doc.save(`${student.matric}_result.pdf`);
-    toast.success("Result Generated!");
+    showSnackbar("Result Generated!", "success");
   };
 
   return (
     <>
-    <ToastContainer />
     <Container sx={{ mt: 6, px: { xs: 1, sm: 2 }, maxWidth: { xs: '100%', sm: 600 } }}>
       {/* Search Form */}
       <Paper
@@ -297,6 +305,17 @@ export default function StudentResults() {
         </Box>
       )}
     </Container>
+    {/* Snackbar */}
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                              {snackbar.message}
+                    </Alert>
+                </Snackbar>
     </>
   );
 }

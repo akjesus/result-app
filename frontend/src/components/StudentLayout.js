@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import {
   Drawer,
   List,
@@ -11,6 +10,8 @@ import {
   Toolbar,
   Paper,
   Button,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import {
   Dashboard,
@@ -36,17 +37,34 @@ const StudentLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-     setTimeout(() => { navigate("/login")}, 1500);
-    setTimeout(() => { toast.info("Logged Out!")}, 2000);
+    setTimeout(() => { showSnackbar("Logged Out!", "info")}, 1000);
+    setTimeout(() => { navigate("/login")}, 2500);
+    
   };
 
   return (
     <>
-    <ToastContainer/>
+      {/* User Icon and Info at Top Left */}
+      <Box sx={{ position: "fixed", top: 16, left: 32, zIndex: 1400, display: "flex", alignItems: "center", gap: 1 }}>
+        <AccountCircleIcon sx={{ fontSize: 36, color: "#2C2C78" }} />
+        <Box sx={{ color: "#2C2C78", fontWeight: 600, fontSize: 15 }}>
+          {user?.name || user?.email || "Student"}
+        </Box>
+      </Box>
     <Box sx={{ display: "flex", width: "100%", minHeight: "100vh", height: "100vh" }}>
       {/* Sidebar toggle button for mobile */}
       <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
@@ -137,6 +155,16 @@ const StudentLayout = () => {
         </Paper>
       </Box>
     </Box>
+     <Snackbar
+                          open={snackbar.open}
+                          autoHideDuration={3000}
+                          onClose={handleCloseSnackbar}
+                          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                        >
+                          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                            {snackbar.message}
+                          </Alert>
+                        </Snackbar>
     </>
   );
 };

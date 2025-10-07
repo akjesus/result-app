@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { getCourses, createCourse, getLevels } from "../../api/schools";
+import { getCourses, createCourse, getLevels, deleteCourse } from "../../api/schools";
 import { getDepartments } from "../../api/departments";
 
 import {
@@ -54,6 +54,8 @@ export default function AdminCourses() {
       const res = await createCourse(payload);
       if (res.data.success) {
         showSnackbar("Course created successfully!", "success");
+       const courses = await getCourses();
+        setCourses(courses.data.courses || []);
         handleClose();
       } else {
         showSnackbar(res.data.message || "Failed to create course", "error");
@@ -143,11 +145,11 @@ export default function AdminCourses() {
     setNewCourse({ ...newCourse, [e.target.name]: e.target.value });
   };
 
-  // ✅ Handle Department with "All" toggle
+
   const handleDepartmentChange = (event) => {
     setNewCourse({ ...newCourse, department: event.target.value });
   };
-  // ✅ Handle Level with "All" toggle
+
   const handleLevelChange = (event) => {
     setNewCourse({ ...newCourse, level: event.target.value });
   };
@@ -165,10 +167,25 @@ export default function AdminCourses() {
   };
 
   // Delete Course
-  const handleDelete = (index) => {
+  const handleDelete =  async (id) => {
     if (window.confirm("Are you sure you want to delete this course?")) {
-      const updated = courses.filter((_, i) => i !== index);
-      setCourses(updated);
+      try  {
+        const response = await deleteCourse(id);
+        if(response.ok) {
+          const courses = await getCourses();
+          setCourses(courses.data.courses || []);
+          showSnackbar("Course Deleted Successfully!", "success");
+          return;
+        }
+        else {
+          showSnackbar(response.data.message || "There was an error", "error");
+          return;
+        }
+      }
+      catch(error) {
+        console.log(error.response.data);
+        showSnackbar(error.response.data.message || "There was an error", "error");
+      }
     }
   };
 
@@ -227,7 +244,7 @@ export default function AdminCourses() {
               )
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((course, index) => (
-                <TableRow key={index}>
+                <TableRow key={course.id}>
                   <TableCell>{course.code}</TableCell>
                   <TableCell>{course.title}</TableCell>
                   <TableCell>{course.departments}</TableCell>
@@ -249,7 +266,7 @@ export default function AdminCourses() {
                         color="error"
                         size="small"
                         sx={{ bgcolor: '#fdecea', borderRadius: 2, p: 1, boxShadow: 1, ':hover': { bgcolor: '#f9d6d5' } }}
-                        onClick={() => handleDelete(index)}
+                        onClick={() => handleDelete(course.id)}
                         aria-label="Delete Course"
                       >
                         <Delete fontSize="small" />

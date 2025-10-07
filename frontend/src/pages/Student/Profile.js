@@ -19,7 +19,7 @@ export default function StudentProfile() {
       getProfile()
         .then(res => {
           setProfileData(res.data.user || []);
-          console.log(res.data.user)
+          setProfilePic(res.data.user.photo);
         })
         .catch((error=> {
          toast.error(error.response.data.message);
@@ -46,7 +46,7 @@ export default function StudentProfile() {
       {/* Profile Picture */}
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
         <Avatar
-          src={profilePic}
+          src={profileData.photo}
           alt="Profile"
           sx={{ width: 100, height: 100, mb: 1 }}
         />
