@@ -114,3 +114,15 @@ export const resetStudentPassword = (id) => {
         }
     );
 };
+
+export const updateProfilePicture = (formData) =>  {
+const token = localStorage.getItem('token');
+    return axios.post(`${API_URL}/update-picture`,
+        formData,
+        {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }
+    );
+}

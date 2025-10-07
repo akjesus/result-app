@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import "react-toastify/dist/ReactToastify.css";
 import {
   Drawer,
@@ -63,6 +65,7 @@ const getMenuItems = (role) => {
 
 
 const AdminLayout = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -112,7 +115,7 @@ const AdminLayout = () => {
 
   return (
     <>
-      <Box sx={{ display: "flex", height: "100vh" }}>
+  <Box sx={{ display: "flex", height: "100vh", position: "relative" }}>
         {/* Sidebar toggle button for mobile */}
         <Box sx={{ position: "fixed", top: 16, left: 8, zIndex: 1300, display: { xs: "block", md: "none" } }}>
           <Button
@@ -123,8 +126,32 @@ const AdminLayout = () => {
             {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
           </Button>
         </Box>
+
+        {/* User Info and Logout at top right */}
+        <Box sx={{ position: "fixed", top: 16, right: 32, zIndex: 1400, display: "flex", alignItems: "center", gap: 2 }}>
+          <AccountCircleIcon sx={{ fontSize: 40, color: "#2C2C78" }} />
+          <Box sx={{ textAlign: "right" }}>
+            <Box sx={{ color: "#2C2C78", fontWeight: 600, fontSize: 16 }}>
+              {user?.name || "User"}
+            </Box>
+            <Box sx={{ color: "#2C2C78", fontSize: 14 }}>
+              {user?.email}
+            </Box>
+            <Box sx={{ color: "#2C2C78", fontSize: 13 }}>
+              Role: {role}
+            </Box>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<Logout />}
+            onClick={handleLogout}
+            sx={{ bgcolor: "#2C2C78", ':hover': { bgcolor: "#1f1f5c" }, ml: 2 }}
+          >
+            Logout
+          </Button>
+        </Box>
         {/* Sidebar */}
-        <Drawer
+  <Drawer
           variant={sidebarOpen ? "temporary" : "permanent"}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -202,7 +229,6 @@ const AdminLayout = () => {
         </Paper>
       </Box>
     </Box>
-    {/* Snackbar */}
                     <Snackbar
                       open={snackbar.open}
                       autoHideDuration={3000}

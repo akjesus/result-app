@@ -1,9 +1,9 @@
 const Student = require("../models/studentModel");
-const Staff = require("../models/staffModel");
 const bcrypt = require("bcrypt");
 const csvParser = require('csv-parser');
 const stream = require('stream');
 const db = require("../config/database");
+const SERVER_URL = process.env.DATABASE_SERVER
 
 //get all users from the sql database and paginate the results
 
@@ -329,6 +329,20 @@ exports.getMyProfile = async (req, res) => {
 
 }
 
+exports.updateProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    if (!req.file) {
+      return res.status(400).json({ success: false, code: 400, message: "No file uploaded. Multer did not parse a file." });
+    }
+    const fileUrl = `http://${SERVER_URL}:5000/uploads/${req.file.originalname}`;
+    await Student.execute('UPDATE students SET photo = ? WHERE id = ?', [fileUrl, userId]);
+    return res.status(200).json({ success: true, code: 200, message: "Profile picture updated", url: fileUrl });
+  } catch (err) {
+    console.log('Error updating profile picture:', err);
+    return res.status(500).json({ success: false, code: 500, message: err.message });
+  }
+}
 
 exports.getStudentsByDepartment = async (req, res) => {
   const levelId = req.query.levelId ? parseInt(req.query.levelId) : null;

@@ -139,7 +139,6 @@ exports.deleteResult = async (req, res) => {
     }
 };
 
-
 //bulk upload results
 exports.bulkUploadResults = async (req, res) => {
     try {
@@ -423,7 +422,6 @@ exports.getCurrentGPA = async (req, res) => {
         const [currentSemester] = await db.query(`
             SELECT id from semesters 
             where active = 1;`);
-             console.log(currentSemester)
         if (!currentSemester || currentSemester.length === 0) {
             return res.status(404).json({ success: false, code: 404, message: 'No active semester found' });
         }

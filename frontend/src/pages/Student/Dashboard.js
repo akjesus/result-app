@@ -29,7 +29,6 @@ const StudentDashboard = () => {
   useEffect(() => {
     getCurrentGPA()
       .then(res => {
-        console.log(res.data);
         const floatgpa = parseFloat(res.data.gpa.gpa) || 0;
         const floatcgpa = parseFloat(res.data.gpa.cgpa) || 0;
         setGpaData({
