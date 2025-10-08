@@ -1,15 +1,23 @@
 import {useState, useEffect} from "react";
-import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, MenuItem, TextField } from "@mui/material";
+import { Typography, Box, Button, Dialog, DialogTitle, DialogContent, MenuItem, TextField, Snackbar, Alert } from "@mui/material";
 import { getSessions } from "../../api/schools";
 import { getSemestersForSession, setActiveSemester } from "../../api/sessions";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export default function AdminSettings() {
   const [openSemesterModal, setOpenSemesterModal] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [loadingSemesters, setLoadingSemesters] = useState(false);
+   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+
+
+  function showSnackbar(message, severity) {
+    setSnackbar({ open: true, message, severity });
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleOpenSemesterModal = () => {
     setOpenSemesterModal(true);
@@ -38,25 +46,24 @@ export default function AdminSettings() {
   };
 
   const handleSetActiveSemester = () => {
-    if (!selectedSemester) return toast.error("Select a semester first");
+    if (!selectedSemester) return showSnackbar("Select a semester first");
     setActiveSemester(selectedSemester)
       .then(res => {
         if (res.data.success) {
-          toast.success("Semester set as active!");
+          showSnackbar("Semester set as active!", "success");
           setOpenSemesterModal(false);
         } else {
-          toast.error(res.data.message || "Failed to set active semester");
+          showSnackbar(res.data.message || "Failed to set active semester", "error");
         }
       })
       .catch(err => {
-        toast.error(err.response?.data?.message || "Error setting active semester");
+        showSnackbar(err.response?.data?.message || "Error setting active semester", "error");
       });
   };
   const [selectedSession, setSelectedSession] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   return (
       <>
-      <ToastContainer/>
       <Box p={{ xs: 1, sm: 3 }} sx={{ maxWidth: 900, mx: 'auto' }}>
       <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#2C2C78", fontSize: { xs: 18, sm: 24 } }}>
       Settings Management 
@@ -99,6 +106,16 @@ export default function AdminSettings() {
         </DialogContent>
       </Dialog>
     </Box>
+    <Snackbar
+      open={snackbar.open}
+      autoHideDuration={3000}
+      onClose={handleCloseSnackbar}
+       anchorOrigin={{ vertical: "top", horizontal: "center" }}
+       >
+         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+               {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

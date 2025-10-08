@@ -6,7 +6,7 @@ const verifyToken = require('../controllers/authController').verifyToken;
 router.use(verifyToken); // Protect all routes after this middleware
 
 router.use(restrictTo('admin', 'superadmin', 'staff'))
-router.get('/course/:courseId', reportController.getGradeDistributionByCourse);
+router.get('/course/:id', reportController.getGradeDistributionByCourse);
 
 
 module.exports = router;

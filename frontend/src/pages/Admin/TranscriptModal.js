@@ -1,4 +1,5 @@
 import React from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,16 +13,25 @@ import {
   TableCell,
   TableBody,
   Box,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../../assets/maduka-logo.png"; // Ensure logo.png exists in assets
-import { toast, ToastContainer } from "react-toastify";
 import exoFont from "../../assets/exo.ttf"; 
 
 // Function to handle save after editing
 
 export default function ResultModal({ open, handleClose, student}) {
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+    function showSnackbar(message, severity) {
+      setSnackbar({ open: true, message, severity });
+    }
+  
+    const handleCloseSnackbar = () => {
+      setSnackbar({ ...snackbar, open: false });
+    };
   if (!student) {
     return (
       <Dialog open={open} onClose={handleClose}>
@@ -117,12 +127,11 @@ export default function ResultModal({ open, handleClose, student}) {
     doc.text("Registrar's Signature:", 14, finalY + 40);
     doc.line(60, finalY + 40, 120, finalY + 40);
     doc.save(`${matric}_transcript.pdf`);
-    toast.success("Transcript Generated!");
+    showSnackbar("Transcript Generated!", "success");
   };
 
   return (
     <>
-      <ToastContainer />
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle sx={{ fontWeight: "bold", color: "#2C2C78" }}>
         {'Student Transcript'}
@@ -221,6 +230,16 @@ export default function ResultModal({ open, handleClose, student}) {
         </Button>
       </DialogActions>
     </Dialog>
+    <Snackbar
+                          open={snackbar.open}
+                          autoHideDuration={3000}
+                          onClose={handleCloseSnackbar}
+                          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                        >
+                          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                            {snackbar.message}
+                          </Alert>
+                        </Snackbar>
     </>
   );
 }

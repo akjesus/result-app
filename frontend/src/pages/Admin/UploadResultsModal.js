@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Box, Typography, Button, TextField, MenuItem } from "@mui/material";
+import { Modal, Box, Typography, Button, TextField, MenuItem, Snackbar, Alert} from "@mui/material";
 import { getCourses, getSessions } from "../../api/schools";
 import { bulkUploadResults } from "../../api/results";
-import { toast } from "react-toastify";
+
 
 
 const style = {
@@ -18,6 +18,14 @@ const style = {
 };
 
 export default function UploadResultsModal({ open, handleClose }) {
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+    function showSnackbar(message, severity) {
+      setSnackbar({ open: true, message, severity });
+    }
+  
+    const handleCloseSnackbar = () => {
+      setSnackbar({ ...snackbar, open: false });
+    };
   // Wrap handleClose to reset modal state
   const handleModalClose = () => {
     setCourse("");
@@ -81,14 +89,13 @@ export default function UploadResultsModal({ open, handleClose }) {
     try {
       const res = await bulkUploadResults(formData);
       if(res.data.success)
-      toast.success(res.data.message || "Results uploaded successfully");
+      showSnackbar(res.data.message || "Results uploaded successfully", "success");
         else {
-        toast.error(res.data.message)
+        showSnackbar(res.data.message, "error");
     }
       handleModalClose();
     } catch (err) {
-      // Optionally show an error toast
-      toast.error(err.response?.data?.message || "Upload failed");
+      showSnackbar(err.response?.data?.message || "Upload failed", "error");
       console.error("Bulk upload failed:", err.response?.data?.message);
       handleModalClose();
     }
@@ -145,6 +152,16 @@ export default function UploadResultsModal({ open, handleClose }) {
           Upload
         </Button>
       </Box>
+      <Snackbar
+            open={snackbar.open}
+            autoHideDuration={3000}
+            onClose={handleCloseSnackbar}
+             anchorOrigin={{ vertical: "top", horizontal: "center" }}
+             >
+               <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                     {snackbar.message}
+              </Alert>
+            </Snackbar>
     </Modal>
   );
 }

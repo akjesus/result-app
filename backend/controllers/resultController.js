@@ -510,7 +510,7 @@ exports.batchUpdateResults = async (req, res) => {
         return res.status(200).json({ success: true, code: 200, message: `${updatedCount} results updated successfully` });
     }
     catch (error) {
-        console.log('Error batch updating results:', error.message);
+        console.log('Error batch updating results: .....', error.message);
         return res.status(500).json({ success: false, code: 500, message: error.message });
     }
 };

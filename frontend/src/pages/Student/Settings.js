@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {changePassword} from "../../api/students"
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,10 +12,20 @@ import {
   Checkbox,
   IconButton,
   InputAdornment,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export default function StudentSettings() {
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+      function showSnackbar(message, severity) {
+        setSnackbar({ open: true, message, severity });
+      }
+    
+      const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+      };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -43,18 +51,18 @@ export default function StudentSettings() {
   const handleSave = () => {
     // Validate required fields
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      toast.error("All password fields are required!");
+      showSnackbar("All password fields are required!", "error");
       return;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New passwords do not match!");
+      showSnackbar("New passwords do not match!", "error");
       return;
     }
     console.log(formData)
     changePassword(formData)
       .then(res=> {
         if(res.data.success) {
-          toast.success(res.data.message);
+          showSnackbar(res.data.message, "success");
           setTimeout(() => {
             navigate("/");
           }, 2000);
@@ -62,24 +70,22 @@ export default function StudentSettings() {
         }
         else {
           console.log(res.data);
-          toast.info(res.data.message);
+          showSnackbar(res.data.message, "info");
           return;
         } 
       })
       .catch(error=> {
-        toast.error(error.response?.data?.message || error.message);
+        showSnackbar(error.response?.data?.message || error.message, "error");
         console.log(error.response);
       })
     
   };
-
   const toggleShowPassword = (field) => {
     setShowPassword({ ...showPassword, [field]: !showPassword[field] });
   };
 
   return (
     <>
-    <ToastContainer/>
     <Container sx={{ mt: 4, px: { xs: 1, sm: 2 }, display: "flex", justifyContent: "center", alignItems: "center", minHeight: { xs: "100vh", sm: "auto" } }}>
       <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, width: "100%", maxWidth: 500, borderRadius: 3 }}>
         <Typography variant="h6" gutterBottom align="center" sx={{ fontSize: { xs: 18, sm: 22 } }}>
@@ -179,6 +185,16 @@ export default function StudentSettings() {
         </Button>
       </Paper>
     </Container>
+    <Snackbar
+              open={snackbar.open}
+              autoHideDuration={3000}
+              onClose={handleCloseSnackbar}
+               anchorOrigin={{ vertical: "top", horizontal: "center" }}
+               >
+                 <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                       {snackbar.message}
+                </Alert>
+              </Snackbar>
     </>
   );
 }

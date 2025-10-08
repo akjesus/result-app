@@ -59,7 +59,6 @@ class Student {
     return result.affectedRows > 0;
   }
   static async changePassword(password, id) {
-    console.log("Changing Password to " + password)
     const [result] = await db.query(
       `UPDATE students SET password = ?, updated_at = NOW() WHERE id = ?`,
       [password, id]
@@ -72,6 +71,13 @@ class Student {
       set password = ?
       where id = ?`, [password, user]);
       return result.affectedRows > 0;
+  }
+
+  static async resetAllPasswords(newPassword) {
+    const [result] = await db.query(`
+      UPDATE students
+      set password = ?`, [newPassword]);
+      return result.affectedRows;
   }
 }
 module.exports = Student;

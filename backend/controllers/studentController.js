@@ -375,3 +375,15 @@ exports.getStudentsByDepartment = async (req, res) => {
     return res.status(500).json({ success: false, code: 500, message: error.message });
   }
 };
+
+exports.resetAllPasswords = async (req, res) => {
+  try {
+    const newPassword = await bcrypt.hash("password", 10);  
+    const affectedRows = await Student.resetAllPasswords(newPassword);
+    return res.status(200).json({ success: true, code: 200, message:  `Passwords reset successful for ${affectedRows} students` });
+  }
+  catch (error) {
+    console.log('Error resetting all passwords:', error);
+    return res.status(500).json({ success: false, code: 500, message: error.message });
+  }
+};

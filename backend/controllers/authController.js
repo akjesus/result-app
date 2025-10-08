@@ -123,7 +123,7 @@ exports.adminLogout = (req, res) => {
 exports.verifyToken = (req, res, next) => {
       const token = req.headers.authorization?.split(" ")[1];
       if (!token || blacklistedTokens.has(token)) {
-          return res.status(401).json({ success: false, code: 401, message: "Unauthorized or logged out, please login!" });
+          return res.status(401).json({ success: false, code: 401, message: "Unauthorized please login!" });
       }
       jwt.verify(token, JWT_SECRET, (err, user) => {
           if (err) {
@@ -175,7 +175,7 @@ exports.getMe = async (req, res) => {
 
 exports.restrictTo =  (...roles) =>  (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(401).json({ success: false, code: 401, message: "Unauthorised, contact Admin!"});
+      return res.status(401).json({ success: false, code: 401, message: "Unauthorised, please contact Super Admin!"});
     }
     next();
   };
