@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import "react-toastify/dist/ReactToastify.css";
+
 import {
   Drawer,
   List,
@@ -57,7 +56,6 @@ const getMenuItems = (role) => {
       { text: "Departments", icon: <Apartment />, path: "/admin/departments" },
       { text: "Schools", icon: <School />, path: "/admin/schools" },
       { text: "Results", icon: <BarChart />, path: "/admin/results" },
-      { text: "Transcripts", icon: <BarChart />, path: "/admin/transcripts" },
     ];
   }
   return [];

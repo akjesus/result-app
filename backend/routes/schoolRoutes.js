@@ -12,8 +12,8 @@ router.get('/levels', schoolController.getLevels);
 
 router.use(restrictTo( 'staff', "admin", "superadmin"));
 router.get('/departments', schoolController.getAllDepartments);
-router.get('departments/:id', schoolController.getDepartmentById);
 router.post('/departments', schoolController.createDepartment);
+router.get('departments/:id', schoolController.getDepartmentById);
 router.put('/departments/:id', schoolController.updateDepartment);
 router.post('/faculties', schoolController.createFaculty);
 router.get('/faculties/:id', schoolController.getFacultyById);

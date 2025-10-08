@@ -33,12 +33,14 @@ router.get('/departments', studentController.getStudentsByDepartment);
 router.post("/bulk-upload", studentController.bulkUploadStudents);
 router.get("/bulk-download", studentController.bulkDownloadStudents);
 router.get("/", studentController.getAllStudents);
-router.get("/:id", studentController.getUserById);
 router.post("/",  studentController.createStudent);
+router.get("/:id", studentController.getUserById);
 
-router.use(restrictTo("admin", "superadmin"))
+router.use(restrictTo("admin", "superadmin"));
 router.post("/:id/reset-password", studentController.resetPassword);
 router.put("/:id",  studentController.updateUser);
+
+router.use(restrictTo("superadmin"));
 router.delete("/:id",  studentController.deleteUser);
 router.post("/:id/block",  studentController.blockUser);
 

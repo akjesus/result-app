@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
 import {getProfile} from "../../api/students";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import {
   Container,
   Typography,
   Avatar,
   Button,
   Box,
+  Snackbar, Alert,
 } from "@mui/material";
 
 export default function StudentProfile() {
   const [profilePic, setProfilePic] = useState(null);
   const [profileData, setProfileData] = useState({})
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+      function showSnackbar(message, severity) {
+        setSnackbar({ open: true, message, severity });
+      }
+      const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+      }
+
 
 
    useEffect(() => {
@@ -22,8 +29,7 @@ export default function StudentProfile() {
           setProfilePic(res.data.user.photo);
         })
         .catch((error=> {
-         toast.error(error.response.data.message);
-          console.log(error.response);
+         showSnackbar(error.response.data.message, "error");
         }));
     }, []);
 
@@ -36,12 +42,11 @@ export default function StudentProfile() {
 
   const handleSave = () => {
     // Later connect this with backend to update student profile
-    toast.success("Profile saved successfully!");
+    showSnackbar("Profile saved successfully!", "success");
   };
 
   return (
     <>
-    <ToastContainer/>
     <Container sx={{ mt: 4, px: { xs: 1, sm: 2 }, maxWidth: { xs: '100%', sm: 500 } }}>
       {/* Profile Picture */}
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
@@ -92,6 +97,16 @@ export default function StudentProfile() {
         </Button>
       </Box>
     </Container>
+    <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+           anchorOrigin={{ vertical: "top", horizontal: "center" }}
+           >
+             <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                   {snackbar.message}
+            </Alert>
+          </Snackbar>
     </>
   );
 }

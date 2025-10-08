@@ -47,6 +47,7 @@ const AppRouter = () => (
 
         <Route path="staff" element={<StaffSettings />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="transcripts" element={<Transcripts />} />
       </Route>
 
       <Route

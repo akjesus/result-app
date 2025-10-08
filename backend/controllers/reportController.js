@@ -16,7 +16,7 @@ exports.getStudentResultsByGrade = async (req, res) => {
 
 //get number of students by grade distribution for a course 
 exports.getGradeDistributionByCourse = async (req, res) => {
-    const courseId = parseInt(req.params.courseId);
+    const courseId = parseInt(req.params.id);
     try {
         const distribution = await Report.getGradeDistributionByCourse(courseId);
         return res.status(200).json({ success: true, code: 200, distribution });
