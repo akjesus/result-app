@@ -43,6 +43,7 @@ router.put("/:id",  studentController.updateUser);
 router.use(restrictTo("superadmin"));
 router.delete("/:id",  studentController.deleteUser);
 router.post("/:id/block",  studentController.blockUser);
+router.post("/reset-all-passwords", studentController.resetAllPasswords);
 
 
 module.exports = router;
