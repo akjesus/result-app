@@ -44,43 +44,39 @@ export default function SchoolsPage() {
     fetchSchools();
   }, []);
 
-  const fetchSchools = () => {
-    getSchools()
-      .then(res => {
+  const fetchSchools = async () => {
+    try {
+        const res = await getSchools();
         setSchools(res.data.schools)
         showSnackbar("Schools Fetched!")
-      })
-      .catch(err => {
-        console.error(err);
-        showSnackbar(`${err.response?.data?.message || "Failed to fetch schools"}`, "error");
-      });
+    }
+    catch(error) {
+        showSnackbar(`${error.response?.data?.message || "Failed to fetch schools"}`, "error");
+        console.log(error)
+    }};
 
-  };
-
-  const onSubmit = (data) => {
-    if (editingSchool) {
-      updateSchool(editingSchool.id, data)
-        .then(() => {
-          reset();
+  const onSubmit = async(data) => {
+    try {
+      if (editingSchool) {
+      await updateSchool(editingSchool.id, data);
+      reset();
           showSnackbar("School updated successfully!", "success");
           setEditingSchool(null);
           setOpenDialog(false);
-          fetchSchools();
-          
-        })
-        .catch(() => showSnackbar("Failed to update school", "error"));
-    } else {
-      addSchool(data)
-        .then(() => {
+          const res = await getSchools();
+          setSchools(res.data.schools)
+    } else{
+      await addSchool(data)
           reset();
           showSnackbar("School added successfully!");
           setOpenDialog(false);
-          fetchSchools();
-         
-        })
-        .catch(() => showSnackbar("Failed to add school", "error"));
-    }
-  };
+          const res = await getSchools();
+          setSchools(res.data.schools)
+
+    }}
+    catch(error) {
+      showSnackbar(error.response.data.message || "There was an error", "error")
+    }};
 
   const handleEdit = (school) => {
     setEditingSchool(school);
@@ -88,16 +84,20 @@ export default function SchoolsPage() {
     setOpenDialog(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this school?")) {
-      deleteSchool(id)
-        .then(() => {
+  const handleDelete =  async (id) => {
+     if (window.confirm("Are you sure you want to delete this school?")) {
+      try {
+        await deleteSchool(id)
           showSnackbar("School deleted successfully!", "success");
-          fetchSchools();
-          
-        })
-        .catch(() => showSnackbar("Failed to delete school", "error"));
+          const res = await getSchools();
+          setSchools(res.data.schools)
     }
+    catch(error) {
+      showSnackbar(error.response.data.message || "There was an error", "error")
+      console.log(error);
+    } 
+    }
+    return
   };
 
   const showSnackbar = (message, severity) => {

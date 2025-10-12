@@ -83,8 +83,14 @@ export default function StaffSettings() {
   const [staff, setStaff] = useState([]);
   useEffect(() => {
     getStaff()
-      .then(res => setStaff(res.data.staff || []))
-      .catch(() => setStaff([]));
+      .then(res => {
+        setStaff(res.data.staff);
+        showSnackbar("All staff fetched!")
+      })
+      .catch((error) => {
+        showSnackbar(error.response.data.message || "There was an error fetching Staff", "error");
+        setStaff([])
+      });
   }, []);
 
   const handleView = (staffMember) => {
@@ -105,7 +111,6 @@ export default function StaffSettings() {
   };
 
   const handleModalSave = async () => {
-    // TODO: Implement save logic (API call)
       if(!selectedStaff) {
         return;}
     try {

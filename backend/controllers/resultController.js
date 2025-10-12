@@ -141,67 +141,76 @@ exports.deleteResult = async (req, res) => {
 
 //bulk upload results
 exports.bulkUploadResults = async (req, res) => {
+    console.log('bulkUploadResults route called');
+    console.log('req.file:', req.file);
+    console.log('req.body:', req.body);
     try {
-    if (!req.files || !req.files.file) {
-        return res.status(400).json({ success: false, code: 400, message: "No file uploaded!" });
-    }
-    const resultsFile = req.files.file;
-    const {session_id, course_id, semester_id} = req.body;
-    if(!session_id || !semester_id) {
-        return res.status(400).json({ success: false, code: 400, message: "Session ID and Semester ID are required!" });
-    }
-    const course = await Course.findById(course_id);
-    if(!course || course.length === 0) {
-        return res.status(400).json({ success: false, code: 400, message: "Invalid Course ID!" });  
-    }
-    const fileExtension = resultsFile.name.split('.').pop().toLowerCase();
-    if (fileExtension !== 'csv') {
-        return res.status(400).json({ success: false, code: 400, message: "Only CSV files are allowed!" });
-    }
-    
+        if (!req.file) {
+            return res.status(400).json({ success: false, code: 400, message: "No file uploaded!" });
+        }
+        const resultsFile = req.file;
+        const {session_id, course_id, semester_id} = req.body;
+        if(!session_id || !semester_id) {
+            return res.status(400).json({ success: false, code: 400, message: "Session ID and Semester ID are required!" });
+        }
+        const course = await Course.findById(course_id);
+        if(!course || course.length === 0) {
+            return res.status(400).json({ success: false, code: 400, message: "Invalid Course ID!" });  
+        }
+        const fileExtension = resultsFile.originalname.split('.').pop().toLowerCase();
+        if (fileExtension !== 'csv') {
+            return res.status(400).json({ success: false, code: 400, message: "Only CSV files are allowed!" });
+        }
+
         const csv = require('csv-parser');
         const stream = require('stream');
         const results = [];
         const readableStream = new stream.Readable();
-        readableStream._read = () => {}; // _read is required but you can noop it
-        readableStream.push(resultsFile.data);
+        readableStream._read = () => {};
+        readableStream.push(resultsFile.buffer);
         readableStream.push(null);
         readableStream.pipe(csv())
         .on('data', (data) => results.push(data))
         .on('end', async () => {
-            // Validate and transform data
             let insertedCount = 0;
+            let errorCount = 0;
+            let errorRows = [];
             for (const r of results) {
-
                 const registration_number = r.registration_number;
                 // Check for duplicate
-                const [existing] = await Result.findByStudentAndCourse(registration_number, course_id);
-                if (existing && existing.length > 0) {
-                    continue; // Skip duplicate
-                }
-                // Insert unique result
                 try {
-                        await Result.createResult(
-                    registration_number,
-                    course_id,
-                    parseFloat(r.cat_score),
-                    parseFloat(r.exam_score),
-                    session_id,
-                    semester_id
-                );
-                insertedCount++;
+                    const [existing] = await Result.findByStudentAndCourse(registration_number, course_id);
+                    if (existing && existing.length > 0) {
+                        console.log(`Duplicate found for ${registration_number}, skipping.`);
+                        continue;
+                    }
+                    const result = await Result.createResult(
+                        registration_number,
+                        course_id,
+                        parseFloat(r.cat_score),
+                        parseFloat(r.exam_score),
+                        session_id,
+                        semester_id
+                    );
+                    console.log(`Inserted result for ${registration_number}:`, result);
+                    insertedCount++;
+                } catch (error) {
+                    errorCount++;
+                    errorRows.push({ row: r, error: error.message });
+                    console.log(`Error inserting row for ${registration_number}:`, error.message);
+                    continue;
                 }
-                catch(error){
-                    return res.status(500).json({success: false, code: 500, message: error.message})
-                }
-                
+            }
+            console.log(`Bulk upload finished: ${insertedCount} inserted, ${errorCount} errors.`);
+            if (errorCount > 0) {
+                return res.status(200).json({success: true, code: 200, message: `${insertedCount} results uploaded, ${errorCount} errors (see server logs for details)`, errors: errorRows });
             }
             return res.status(200).json({success: true, code: 200, message: `${insertedCount} results uploaded successfully (duplicates skipped)` });
         })
         .on('error', (err) => {
             console.log('Error parsing CSV:', err.message);
             return res.status(500).json({success: false, code: 500, message: "Error parsing CSV file" });
-        }); 
+        });
     } catch (error) {
         console.log('Error uploading results:', error.message);
         return res.status(500).json({success: false, code: 500, message: error.message });

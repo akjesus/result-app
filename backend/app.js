@@ -7,7 +7,6 @@ const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 dotenv.config({ path: "/.env"});
-const multer = require('multer');
 const path = require("path");
 
 
@@ -18,15 +17,11 @@ const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
+
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
-// Do NOT use express.urlencoded or bodyParser.urlencoded globally for file upload routes
+app.use(express.json()); // For JSON payloads
+app.use(express.urlencoded({ extended: true })); 
 
 // Test Route
 app.get("/", (req, res) => {

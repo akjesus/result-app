@@ -1,10 +1,8 @@
+
 import React, { useState, useEffect } from "react";
-import { Modal, Box, Typography, Button, TextField, MenuItem, Snackbar, Alert} from "@mui/material";
+import { Modal, Box, Typography, Button, TextField, MenuItem, Snackbar, Alert } from "@mui/material";
 import { getCourses, getSessions } from "../../api/schools";
-import { bulkUploadResults } from "../../api/results";
-
-
-
+import {bulkUploadResults} from "../../api/results"
 const style = {
   position: 'absolute',
   top: '50%',
@@ -19,15 +17,22 @@ const style = {
 
 export default function UploadResultsModal({ open, handleClose }) {
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-    function showSnackbar(message, severity) {
+  const [course, setCourse] = useState("");
+  const [session, setSession] = useState("");
+  const [semester, setSemester] = useState("");
+  const [file, setFile] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [semesters, setSemesters] = useState([]);
+  const showSnackbar = (message, severity) => {
       setSnackbar({ open: true, message, severity });
-    }
+    };
   
     const handleCloseSnackbar = () => {
       setSnackbar({ ...snackbar, open: false });
     };
-  // Wrap handleClose to reset modal state
-  const handleModalClose = () => {
+
+const handleModalClose = () => {
     setCourse("");
     setSemester("");
     setSession("");
@@ -35,14 +40,7 @@ export default function UploadResultsModal({ open, handleClose }) {
     setSemesters([]);
     handleClose();
   };
-  const [course, setCourse] = useState("");
-  const [semester, setSemester] = useState("");
-  const [session, setSession] = useState("");
-  const [file, setFile] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [semesters, setSemesters] = useState([]);
-
+  // Mock data for demonstration
   useEffect(() => {
     if (open) {
       getCourses()
@@ -63,22 +61,17 @@ export default function UploadResultsModal({ open, handleClose }) {
     setFile(e.target.files[0]);
   };
 
-  // Fetch semesters for selected session
   useEffect(() => {
     if (session) {
-      // Assume getSessions returns sessions with semesters array
-      const selectedSession = sessions.find(s => s.id === session);
-      if (selectedSession && selectedSession.semesters) {
-        setSemesters(selectedSession.semesters);
-      } else {
-        setSemesters([]);
-      }
+      const selectedSession = sessions.find(s => s.id === Number(session));
+      setSemesters(selectedSession ? selectedSession.semesters : []);
     } else {
       setSemesters([]);
     }
   }, [session, sessions]);
-  
-  const handleUpload = async () => {
+
+
+ const handleUpload = async () => {
     if (!file || !course || !semester || !session) return;
     const formData = new FormData();
     formData.append("file", file);
@@ -88,21 +81,32 @@ export default function UploadResultsModal({ open, handleClose }) {
     
     try {
       const res = await bulkUploadResults(formData);
-      if(res.data.success)
-      showSnackbar(res.data.message || "Results uploaded successfully", "success");
+      if(res.data.success) {
+        showSnackbar(res.data.message || "Results uploaded successfully", "success");
+        setTimeout ( ()=> {
+          handleModalClose();
+        }, 2000);
+        
+      }
+      
         else {
         showSnackbar(res.data.message, "error");
+        setTimeout ( ()=> {
+          handleModalClose();
+        }, 2000);
     }
-      handleModalClose();
     } catch (err) {
       showSnackbar(err.response?.data?.message || "Upload failed", "error");
       console.error("Bulk upload failed:", err.response?.data?.message);
-      handleModalClose();
+      setTimeout ( ()=> {
+          handleModalClose();
+        }, 2000);
     }
   };
 
+
   return (
-  <Modal open={open} onClose={handleModalClose}>
+    <Modal open={open} onClose={handleClose}>
       <Box sx={style}>
         <Typography variant="h6" mb={2}>Upload Results (CSV)</Typography>
         <TextField
@@ -113,7 +117,7 @@ export default function UploadResultsModal({ open, handleClose }) {
           fullWidth
           sx={{ mb: 2 }}
         >
-          {courses.map((c) => (
+          {(courses || []).map((c) => (
             <MenuItem key={c.id} value={c.id}>{c.code + " - " + c.title}</MenuItem>
           ))}
         </TextField>
@@ -125,7 +129,7 @@ export default function UploadResultsModal({ open, handleClose }) {
           fullWidth
           sx={{ mb: 2 }}
         >
-          {sessions.map((s) => (
+          {(sessions || []).map((s) => (
             <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
           ))}
         </TextField>
@@ -138,11 +142,10 @@ export default function UploadResultsModal({ open, handleClose }) {
           sx={{ mb: 2 }}
           disabled={!semesters.length}
         >
-          {semesters.map((sem) => (
+          {(semesters || []).map((sem) => (
             <MenuItem key={sem.id} value={sem.id}>{sem.name}</MenuItem>
           ))}
         </TextField>
-        
         <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }}>
           Choose CSV File
           <input type="file" hidden accept=".csv" onChange={handleFileChange} />
@@ -151,17 +154,17 @@ export default function UploadResultsModal({ open, handleClose }) {
         <Button variant="contained" color="primary" fullWidth onClick={handleUpload} disabled={!file || !course || !semester || !session}>
           Upload
         </Button>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={1000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
-      <Snackbar
-            open={snackbar.open}
-            autoHideDuration={3000}
-            onClose={handleCloseSnackbar}
-             anchorOrigin={{ vertical: "top", horizontal: "center" }}
-             >
-               <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
-                     {snackbar.message}
-              </Alert>
-            </Snackbar>
     </Modal>
   );
 }

@@ -72,26 +72,41 @@ export default function DepartmentsPage() {
       .catch(err => console.error(err));
   }
 
-  function onSubmit(data) {
+  async function onSubmit(data) {
     if (editingDept) {
-      updateDepartment(editingDept.id, data)
-        .then(() => {
-          reset();
+      try {
+        const res = await updateDepartment(editingDept.id, data);
+      if(res.ok) {
+        reset();
           setEditingDept(null);
           setOpenDialog(false);
           showSnackbar("Department updated successfully!", "success");
           fetchDepartments();
-        })
-        .catch(err => showSnackbar(`Failed to update department: ${err.response.data.message || ""}`, "error"));
+      }
+      else {
+        showSnackbar("Department not updated!", "info");
+      }
+      }
+
+      catch (error) {
+        showSnackbar(`Failed to update department: ${error.response.data.message || ""}`, "error");
+        console.log(error);
+      }
+
     } else {
-      addDepartment(data)
-        .then(() => {
-          reset();
+      try {
+         await addDepartment(data);
+         reset();
           setOpenDialog(false);
           showSnackbar("Department added successfully!", "success");
-          fetchDepartments();
-        })
-        .catch(err => showSnackbar(`Failed to add department: ${err.response.data.message || ""} `, "error"));
+          const res = await getDepartments();
+          setDepartments(res.data.departments);
+      } 
+      catch(error) {
+        showSnackbar(`Failed to add department: ${error.response.data.message || ""} `, "error");
+        console.log(error);
+      }
+     
     }
   }
 
@@ -102,18 +117,20 @@ export default function DepartmentsPage() {
     setOpenDialog(true);
   }
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (window.confirm("Are you sure you want to delete this department?")) {
-      deleteDepartment(id)
-        .then(() => {
-          showSnackbar("Department deleted successfully!", "success");
-          fetchDepartments();
-        })
-        .catch(err => showSnackbar("Failed to delete department", err.message || "error"));
+      try {
+        await deleteDepartment(id);
+        showSnackbar("Department deleted successfully!", "success");
+        const res = await getDepartments();
+        setDepartments(res.data.departments);
+
+      } catch (err) {
+        showSnackbar("Failed to delete department", err.message || "error");
+      }
     }
   }
 
- 
 
   // Filtered & paginated departments
  const filtered = departments.filter(dept => {
