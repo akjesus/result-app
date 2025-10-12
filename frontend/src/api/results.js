@@ -35,7 +35,6 @@ export const bulkUploadResults = (formData) => {
   const token = localStorage.getItem('token');
   return axios.post(`${API_URL}/bulk-upload`, formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
       'Authorization': `Bearer ${token}`
     }
   });
